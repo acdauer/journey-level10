@@ -344,23 +344,27 @@ async function gPatch(path,body,etag){const h={Authorization:`Bearer ${msToken}`
 const SP_BASE=`https://graph.microsoft.com/v1.0/sites/${SP_HOST}:${SP_SITE}:/lists/${SP_LIST}`;
 async function loadSP(force=false){
   try{
-    const res=await fetch(`${SP_BASE}/items?$filter=fields/Title eq '${SP_TITLE}'&$expand=fields&$top=1`,{
+    // Get all items — don't filter by Title since it's not indexed
+    // Our list only has one item so this is safe and fast
+    const res=await fetch(`${SP_BASE}/items?$expand=fields&$top=10`,{
       headers:{Authorization:`Bearer ${msToken}`,'Accept':'application/json;odata.metadata=minimal'}
     });
     if(!res.ok){
-      console.warn('SP load failed:',res.status,await res.text());
+      const errText=await res.text();
+      console.warn('SP load failed:',res.status,errText);
       return false;
     }
     const data=await res.json();
     const items=data.value||[];
-    if(items.length>0){
-      spItemId=items[0].id;
-      const json=items[0].fields?.JsonData;
+    // Find our shared state item by title
+    const item=items.find(x=>x.fields?.Title===SP_TITLE)||items[0];
+    if(item){
+      spItemId=item.id;
+      const json=item.fields?.JsonData;
       if(json){
         try{
           const remote=JSON.parse(json);
           const rh=JSON.stringify(remote);
-          // Always apply on force load (sign-in), otherwise only if changed
           if(force||rh!==lastHash){
             D=remote;
             lastHash=rh;
@@ -371,7 +375,6 @@ async function loadSP(force=false){
         }catch(e){console.warn('SP parse error:',e);}
       }
     }else{
-      // No shared data yet — push current data to create it
       console.log('No shared data found — creating initial record...');
       await pushSP();
     }
