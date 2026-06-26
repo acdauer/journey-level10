@@ -434,15 +434,89 @@ async function loadMembers(){
 }
 async function loadPlans(){
   try{
-    const groups=await graphGet('groups','?$filter=displayName eq \'Journey Auto Repair\'&$select=id');
-    const gid=groups.value&&groups.value[0]?groups.value[0].id:null;
-    const plans=gid?await graphGet(`groups/${gid}/planner/plans`):await graphGet('me/planner/plans');
-    const all=plans.value||[];
-    const l10=all.find(p=>p.title&&(p.title.toLowerCase().includes('level10')||p.title.toLowerCase().includes('level 10')));
-    if(l10){msPlanId=l10.id;await loadBuckets();}
-    else if(all.length){msPlanId=all[0].id;await loadBuckets();}
-  }catch(e){}
+    // Step 1 — try to find existing Level 10 plan across all user plans
+    let all=[];
+    try{const r=await graphGet('me/planner/plans');all=r.value||[];}catch(e){}
+
+    // Step 2 — also check all groups the user belongs to
+    try{
+      const grps=await graphGet('me/memberOf','?$select=id,displayName');
+      for(const g of(grps.value||[])){
+        try{
+          const gplans=await graphGet(`groups/${g.id}/planner/plans`);
+          all=[...all,...(gplans.value||[])];
+        }catch(e){}
+      }
+    }catch(e){}
+
+    // Step 3 — deduplicate by id
+    const seen=new Set();
+    all=all.filter(p=>{if(seen.has(p.id))return false;seen.add(p.id);return true;});
+
+    // Step 4 — look for a Level 10 plan
+    const l10=all.find(p=>p.title&&(
+      p.title.toLowerCase().includes('level10')||
+      p.title.toLowerCase().includes('level 10')||
+      p.title.toLowerCase().includes('journey auto level')
+    ));
+
+    if(l10){
+      msPlanId=l10.id;
+      msAllPlans=all;
+      await loadBuckets();
+      console.log('Found existing Level 10 plan:',l10.title);
+      return;
+    }
+
+    // Step 5 — store all plans for user to pick from
+    msAllPlans=all;
+
+    // Step 6 — no plan found, create one
+    if(!msPlanId){
+      console.log('No Level 10 plan found — creating one...');
+      await createLevel10Plan();
+    }
+  }catch(e){console.warn('loadPlans error:',e);}
 }
+
+async function createLevel10Plan(){
+  try{
+    // Need a group to create a plan — use first available group
+    const grps=await graphGet('me/memberOf','?$select=id,displayName');
+    const groups=(grps.value||[]).filter(g=>g['@odata.type']==='#microsoft.graph.group');
+    if(!groups.length){
+      console.warn('No groups found to create Planner plan');
+      showPlannerSetupNotice();
+      return;
+    }
+    // Prefer a group with "corporate" or "journey" in the name
+    const preferred=groups.find(g=>g.displayName&&(
+      g.displayName.toLowerCase().includes('corporate')||
+      g.displayName.toLowerCase().includes('journey')||
+      g.displayName.toLowerCase().includes('level')
+    ))||groups[0];
+    const plan=await graphPost('planner/plans',{
+      owner:preferred.id,
+      title:'Journey Auto — Level 10 Tasks'
+    });
+    msPlanId=plan.id;
+    await loadBuckets();
+    console.log('Created new Level 10 plan in group:',preferred.displayName);
+  }catch(e){
+    console.warn('Could not create plan:',e);
+    showPlannerSetupNotice();
+  }
+}
+
+function showPlannerSetupNotice(){
+  const bar=document.getElementById('auth-bar');
+  if(bar){
+    bar.className='auth-bar pending';
+    bar.innerHTML=`<div style="display:flex;align-items:center;gap:8px"><i class="ti ti-alert-triangle" style="font-size:16px"></i><span>Connected to Microsoft 365 but could not find or create a Planner plan. Tasks will save locally only. <a href="https://tasks.office.com" target="_blank" style="color:inherit;font-weight:700;">Open Planner</a> to create a plan manually.</span></div>`;
+  }
+}
+
+let msAllPlans=[];
 async function loadBuckets(){
   if(!msPlanId)return;
   try{const r=await graphGet(`planner/plans/${msPlanId}/buckets`);msBuckets={};(r.value||[]).forEach(b=>{msBuckets[b.name]=b.id;});}catch(e){}
@@ -453,17 +527,39 @@ async function ensureBucket(name){
   try{const b=await graphPost('planner/buckets',{name,planId:msPlanId,orderHint:' !'});msBuckets[name]=b.id;return b.id;}catch(e){return null;}
 }
 async function createPlannerTask(todo){
-  if(!msToken||!msPlanId)return;
+  if(!msToken)return;
+  if(!msPlanId){await loadPlans();if(!msPlanId){console.warn('No Planner plan available');return;}}
   try{
     const bucketId=await ensureBucket('This Week');
-    const assignee=msMembers.find(m=>m.displayName===todo.owner||m.mail?.split('@')[0]===todo.owner);
+    const ownerLower=(todo.owner||'').toLowerCase();
+    const assignee=msMembers.find(m=>
+      m.displayName===todo.owner||
+      (m.mail&&m.mail.split('@')[0]===todo.owner)||
+      m.displayName?.toLowerCase()===ownerLower||
+      m.displayName?.toLowerCase().startsWith(ownerLower)
+    );
     const assignments={};
     if(assignee)assignments[assignee.id]={'@odata.type':'#microsoft.graph.plannerAssignment',orderHint:' !'};
+    else console.warn('Assignee not found:',todo.owner);
     let dueDateTime=null;
-    try{const dd=new Date(todo.due+', '+new Date().getFullYear());if(!isNaN(dd))dueDateTime=dd.toISOString();}catch(e){}
-    const task=await graphPost('planner/tasks',{planId:msPlanId,bucketId:bucketId||undefined,title:todo.task,assignments,dueDateTime});
-    todo.plannerId=task.id;todo.plannerSynced=true;save();render();
-  }catch(e){console.warn('Planner sync error',e);}
+    try{const dd=new Date(todo.due+', '+new Date().getFullYear());if(!isNaN(dd.getTime()))dueDateTime=dd.toISOString();}catch(e){}
+    const task=await graphPost('planner/tasks',{
+      planId:msPlanId,bucketId:bucketId||undefined,
+      title:todo.task,assignments,dueDateTime
+    });
+    todo.plannerId=task.id;todo.plannerSynced=true;todo.plannerPlan=msPlanId;
+    save();render();
+    console.log('Planner task created:',todo.task);
+  }catch(e){
+    console.warn('Planner sync error:',e);
+    const bar=document.getElementById('auth-bar');
+    if(bar){
+      const orig=bar.innerHTML,origClass=bar.className;
+      bar.className='auth-bar error';
+      bar.innerHTML='<span>⚠️ Planner sync failed — task saved locally only. Check you have a Planner plan created.</span>';
+      setTimeout(()=>{bar.className=origClass;bar.innerHTML=orig;},5000);
+    }
+  }
 }
 async function completePlannerTask(taskId){
   if(!msToken||!taskId)return;
@@ -478,7 +574,8 @@ function updateAuthBar(state,msg){
   bar.className='auth-bar ';
   if(state==='connected'||(!state&&msToken&&msUser)){
     bar.className='auth-bar connected';
-    txt.innerHTML=`Connected as <strong>${msUser.displayName||msUser.mail}</strong> — tasks sync to Planner & To Do automatically ✅`;
+    const planName=msPlanId?'Planner connected ✅':'Planner not found ⚠️';
+    txt.innerHTML=`Connected as <strong>${msUser.displayName||msUser.mail}</strong> — ${planName}`;
     btn.className='auth-btn sign-out';btn.textContent='Sign out';
   } else if(state==='pending'){
     bar.className='auth-bar pending';txt.textContent=msg||'Connecting...';btn.style.display='none';
