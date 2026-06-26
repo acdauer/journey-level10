@@ -358,14 +358,22 @@ let D=load();
 function curWeek(){return D.weeks[D.currentWeekIndex]||D.weeks[D.weeks.length-1];}
 
 // ── MICROSOFT AUTH ──────────────────────────────────────────────────────────
+function isInsideTeams(){
+  try{
+    return window.parent!==window||
+      window.navigator.userAgent.includes('Teams')||
+      (typeof microsoftTeams!=='undefined'&&!!microsoftTeams);
+  }catch(e){return false;}
+}
+
 function handleAuth(){
   if(msToken){signOut();return;}
   const authUrl=AUTH_URL+'?'+new URLSearchParams({
     client_id:CLIENT_ID,response_type:'token',redirect_uri:REDIRECT_URI,
     scope:SCOPES,response_mode:'fragment',prompt:'select_account'
   });
-  // Use Teams popup auth if running inside Teams
-  if(window.microsoftTeams){
+  // Inside Teams — use Teams popup auth
+  if(isInsideTeams()&&typeof microsoftTeams!=='undefined'){
     try{
       microsoftTeams.authentication.authenticate({
         url:authUrl,width:600,height:535,
@@ -376,25 +384,14 @@ function handleAuth(){
         },
         failureCallback:function(reason){
           console.warn('Teams popup auth failed:',reason);
-          window.open(authUrl,'_blank','width=600,height=535');
+          location.href=authUrl;
         }
       });
       return;
     }catch(e){console.warn('Teams auth error:',e);}
   }
-  // Fallback — open popup manually
-  const popup=window.open(authUrl,'msalPopup','width=600,height=535,scrollbars=yes');
-  const timer=setInterval(()=>{
-    try{
-      if(popup.location.hash&&popup.location.hash.includes('access_token')){
-        const params=new URLSearchParams(popup.location.hash.substring(1));
-        msToken=params.get('access_token');
-        popup.close();clearInterval(timer);
-        if(msToken)onSignedIn();
-      }
-    }catch(e){}
-    if(popup.closed)clearInterval(timer);
-  },500);
+  // Regular browser — redirect in same tab (cleanest experience)
+  location.href=authUrl;
 }
 function signOut(){msToken=null;msUser=null;msMembers=[];msPlanId=null;msBuckets={};updateAuthBar();render();}
 
