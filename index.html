@@ -301,12 +301,21 @@ async function onSignedIn(){
     msUser=await gGet('me');
     await loadMembers();
     await loadPlans();
-    setAbar('pend','Loading shared data...');
-    await loadSP();
+    setAbar('pend','Loading shared meeting data from SharePoint...');
+    const loaded=await loadSP(true); // force=true always overwrites local
+    if(loaded){
+      console.log('SharePoint sync successful');
+    } else {
+      console.warn('SharePoint sync may have failed — check permissions');
+    }
     startSync();
     setAbar('conn');
     render();
-  }catch(e){console.warn('signin error:',e);setAbar('err','Connection failed — check app permissions in Azure');}
+  }catch(e){
+    console.warn('signin error:',e);
+    setAbar('err','Connection failed — check app permissions in Azure');
+    render(); // still render with local data
+  }
 }
 
 function setAbar(state,msg){
@@ -333,10 +342,15 @@ async function gPatch(path,body,etag){const h={Authorization:`Bearer ${msToken}`
 
 // ── SHAREPOINT ────────────────────────────────────────────────────────────────
 const SP_BASE=`https://graph.microsoft.com/v1.0/sites/${SP_HOST}:${SP_SITE}:/lists/${SP_LIST}`;
-async function loadSP(){
+async function loadSP(force=false){
   try{
-    const res=await fetch(`${SP_BASE}/items?$filter=fields/Title eq '${SP_TITLE}'&$expand=fields&$top=1`,{headers:{Authorization:`Bearer ${msToken}`}});
-    if(!res.ok)throw new Error('SP load '+res.status);
+    const res=await fetch(`${SP_BASE}/items?$filter=fields/Title eq '${SP_TITLE}'&$expand=fields&$top=1`,{
+      headers:{Authorization:`Bearer ${msToken}`,'Accept':'application/json;odata.metadata=minimal'}
+    });
+    if(!res.ok){
+      console.warn('SP load failed:',res.status,await res.text());
+      return false;
+    }
     const data=await res.json();
     const items=data.value||[];
     if(items.length>0){
@@ -346,13 +360,26 @@ async function loadSP(){
         try{
           const remote=JSON.parse(json);
           const rh=JSON.stringify(remote);
-          if(rh!==lastHash){D=remote;lastHash=rh;saveLocal();console.log('Loaded from SharePoint');}
+          // Always apply on force load (sign-in), otherwise only if changed
+          if(force||rh!==lastHash){
+            D=remote;
+            lastHash=rh;
+            saveLocal();
+            console.log('Loaded shared data from SharePoint ✅');
+            return true;
+          }
         }catch(e){console.warn('SP parse error:',e);}
       }
     }else{
-      await pushSP();// create first item
+      // No shared data yet — push current data to create it
+      console.log('No shared data found — creating initial record...');
+      await pushSP();
     }
-  }catch(e){console.warn('loadSP error:',e);}
+    return false;
+  }catch(e){
+    console.warn('loadSP error:',e);
+    return false;
+  }
 }
 async function pushSP(){
   try{
@@ -370,7 +397,12 @@ async function pushSP(){
 }
 function startSync(){
   if(syncTimer)clearInterval(syncTimer);
-  syncTimer=setInterval(async()=>{if(msToken)await loadSP().then(()=>render());},15000);
+  syncTimer=setInterval(async()=>{
+    if(msToken){
+      const updated=await loadSP();
+      if(updated)render();
+    }
+  },15000);
 }
 
 // ── MEMBERS ───────────────────────────────────────────────────────────────────
