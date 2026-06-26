@@ -1,327 +1,227 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Journey Auto Repair — Level 10 Meeting</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
 <script src="https://res.cdn.office.net/teams-js/2.22.0/js/MicrosoftTeams.min.js"></script>
 <style>
-  :root {
-    --orange: #FE8630;
-    --charcoal: #49535F;
-    --bg: #ffffff;
-    --bg2: #f5f6f7;
-    --border: #e2e4e7;
-    --text: #1a1d20;
-    --text2: #6b7280;
-    --green-bg: #EAF3DE; --green: #3B6D11;
-    --red-bg: #FCEBEB;   --red: #A32D2D;
-    --amber-bg: #FAEEDA; --amber: #854F0B;
-    --blue-bg: #E6F1FB;  --blue: #0C447C;
-    --radius: 8px;
-    --radius-sm: 5px;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #1a1d20; --bg2: #23272b; --border: #333a42;
-      --text: #f0f1f2; --text2: #9ba3ad;
-    }
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg2); color: var(--text); min-height: 100vh; }
-  .app-wrap { max-width: 960px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
-
-  /* HEADER */
-  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 10px; }
-  .logo { display: flex; align-items: center; gap: 10px; }
-  .logo-dot { width: 38px; height: 38px; border-radius: 50%; background: var(--orange); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .logo-dot i { color: #fff; font-size: 19px; }
-  .app-title { font-size: 18px; font-weight: 600; color: var(--text); }
-  .app-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
-  .hdr-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .week-pill { font-size: 12px; padding: 5px 12px; border-radius: var(--radius-sm); background: var(--orange); color: #fff; font-weight: 600; }
-  .icon-btn { font-size: 12px; padding: 5px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 5px; transition: background 0.15s; }
-  .icon-btn:hover { background: var(--bg2); }
-
-  /* AUTH BAR */
-  .auth-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: var(--radius); margin-bottom: 1.25rem; font-size: 12px; flex-wrap: wrap; gap: 8px; }
-  .auth-bar.pending { background: var(--amber-bg); color: var(--amber); border: 1px solid #f0d49a; }
-  .auth-bar.connected { background: var(--green-bg); color: var(--green); border: 1px solid #b2d48a; }
-  .auth-bar.error { background: var(--red-bg); color: var(--red); border: 1px solid #f0b8b8; }
-  .auth-btn { font-size: 12px; padding: 5px 12px; border-radius: var(--radius-sm); border: none; cursor: pointer; font-weight: 600; }
-  .auth-btn.sign-in { background: var(--orange); color: #fff; }
-  .auth-btn.sign-out { background: rgba(0,0,0,0.12); color: inherit; }
-
-  /* SUMMARY */
-  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
-  @media (max-width: 600px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } }
-  .sum-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
-  .sum-label { font-size: 11px; color: var(--text2); margin-bottom: 3px; }
-  .sum-val { font-size: 22px; font-weight: 700; }
-  .sum-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
-  .c-green { color: var(--green); } .c-amber { color: var(--amber); } .c-red { color: var(--red); }
-
-  /* NAV */
-  .nav { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; overflow-x: auto; }
-  .nav-tab { font-size: 12px; padding: 9px 13px; cursor: pointer; color: var(--text2); border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; display: flex; align-items: center; gap: 5px; transition: color 0.15s; }
-  .nav-tab i { font-size: 13px; }
-  .nav-tab:hover { color: var(--text); }
-  .nav-tab.active { color: var(--orange); border-bottom-color: var(--orange); font-weight: 600; }
-
-  /* CARDS */
-  .card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 1rem; }
-  .card-hdr { padding: 11px 15px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-  .card-hdr-left { display: flex; align-items: center; gap: 8px; }
-  .card-hdr-left i { font-size: 16px; color: var(--orange); }
-  .card-title { font-size: 13px; font-weight: 600; color: var(--text); }
-  .card-sub { font-size: 11px; color: var(--text2); margin-top: 1px; }
-  .timer-badge { font-size: 11px; padding: 3px 9px; border-radius: var(--radius-sm); background: var(--orange); color: #fff; font-weight: 600; white-space: nowrap; }
-
-  /* TABLE */
-  .tbl-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th { padding: 7px 10px; text-align: left; color: var(--text2); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 11px; white-space: nowrap; background: var(--bg2); }
-  td { padding: 7px 10px; color: var(--text); border-bottom: 1px solid var(--border); vertical-align: middle; }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--bg2); }
-
-  /* INPUTS */
-  .num-input { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 3px 6px; font-size: 12px; color: var(--text); text-align: center; }
-  .num-input:focus { outline: none; border-color: var(--orange); }
-  .inline-edit { background: transparent; border: none; font-size: 12px; color: var(--text); width: 100%; padding: 2px 4px; border-radius: 4px; cursor: pointer; }
-  .inline-edit:hover { background: var(--bg2); outline: 1px dashed var(--border); }
-  .inline-edit:focus { background: var(--bg2); outline: 1px solid var(--orange); cursor: text; }
-  .inline-edit-num { background: transparent; border: none; font-size: 12px; color: var(--text); width: 100%; padding: 2px 4px; border-radius: 4px; cursor: pointer; text-align: center; }
-  .inline-edit-num:hover { background: var(--bg2); outline: 1px dashed var(--border); }
-  .inline-edit-num:focus { background: var(--bg2); outline: 1px solid var(--orange); }
-  .txt-full { width: 100%; font-size: 13px; border: none; background: transparent; color: var(--text); padding: 0; }
-  .txt-full:focus { outline: none; }
-
-  /* BADGES */
-  .badge { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font-size: 10px; }
-  .b-green { background: var(--green-bg); color: var(--green); }
-  .b-red { background: var(--red-bg); color: var(--red); }
-  .b-amber { background: var(--amber-bg); color: var(--amber); }
-  .b-gray { background: var(--bg2); color: var(--text2); }
-  .pill { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: var(--radius-sm); font-weight: 600; }
-  .pill-on { background: var(--green-bg); color: var(--green); }
-  .pill-off { background: var(--red-bg); color: var(--red); }
-  .pill-risk { background: var(--amber-bg); color: var(--amber); }
-  .planner-tag { font-size: 10px; padding: 1px 7px; border-radius: var(--radius-sm); background: var(--blue-bg); color: var(--blue); }
-  .ids-priority { font-size: 10px; padding: 2px 7px; border-radius: var(--radius-sm); font-weight: 600; }
-  .ids-high { background: var(--red-bg); color: var(--red); }
-  .ids-med { background: var(--amber-bg); color: var(--amber); }
-  .ids-low { background: var(--green-bg); color: var(--green); }
-  .freq-note { font-size: 10px; color: var(--text2); font-style: italic; }
-
-  /* ROWS */
-  .agenda-row { display: flex; align-items: center; gap: 10px; padding: 11px 15px; border-bottom: 1px solid var(--border); }
-  .agenda-row:last-child { border-bottom: none; }
-  .agenda-num { width: 24px; height: 24px; border-radius: 50%; background: var(--orange); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .check-wrap { display: flex; align-items: flex-start; gap: 10px; padding: 10px 15px; border-bottom: 1px solid var(--border); }
-  .check-wrap:last-child { border-bottom: none; }
-  .headline-row { padding: 10px 15px; border-bottom: 1px solid var(--border); }
-  .headline-row:last-child { border-bottom: none; }
-  .headline-person { font-size: 11px; font-weight: 700; color: var(--orange); margin-bottom: 4px; }
-
-  /* BUTTONS */
-  .row-btn { background: none; border: none; cursor: pointer; color: var(--text2); padding: 2px 4px; font-size: 13px; border-radius: 4px; }
-  .row-btn:hover { color: var(--red); background: var(--red-bg); }
-  .add-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--orange); padding: 9px 15px; cursor: pointer; border: none; background: none; width: 100%; text-align: left; border-top: 1px solid var(--border); font-weight: 600; }
-  .add-row:hover { background: var(--bg2); }
-  .add-row i { font-size: 14px; }
-  .edit-hint { font-size: 10px; color: var(--text2); padding: 6px 15px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 5px; background: var(--bg2); }
-
-  /* RATING */
-  .rating-btn { width: 32px; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg2); color: var(--text); cursor: pointer; font-size: 12px; font-weight: 600; }
-  .rating-btn:hover { border-color: var(--orange); color: var(--orange); }
-  .rating-btn.selected { background: var(--orange); color: #fff; border-color: var(--orange); }
-
-  /* SC TABS */
-  .sc-tabs { display: flex; gap: 0; padding: 0 15px; border-bottom: 1px solid var(--border); background: var(--bg2); overflow-x: auto; }
-  .sc-tab { font-size: 11px; padding: 8px 12px; cursor: pointer; color: var(--text2); border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; font-weight: 500; }
-  .sc-tab:hover { color: var(--text); }
-  .sc-tab.active { color: var(--orange); border-bottom-color: var(--orange); font-weight: 700; }
-
-  /* SELECTS */
-  select { font-size: 12px; padding: 3px 7px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg2); color: var(--text); cursor: pointer; }
-  select:focus { outline: none; border-color: var(--orange); }
-
-  /* MODAL */
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; }
-  .modal-overlay.open { display: flex; }
-  .modal { background: var(--bg); border-radius: var(--radius); border: 1px solid var(--border); padding: 1.5rem; width: 360px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
-  .modal-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 1.1rem; }
-  .field { margin-bottom: 12px; }
-  .field label { display: block; font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
-  .field input, .field select, .field textarea { width: 100%; font-size: 13px; padding: 7px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); color: var(--text); }
-  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--orange); }
-  .field textarea { resize: vertical; min-height: 64px; }
-  .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.1rem; }
-  .btn-cancel { font-size: 13px; padding: 7px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; }
-  .btn-save { font-size: 13px; padding: 7px 14px; border-radius: var(--radius-sm); border: none; background: var(--orange); color: #fff; cursor: pointer; font-weight: 700; }
-  .btn-save:hover { opacity: 0.9; }
-
-  /* SPINNER */
-  .spinner { display: inline-block; width: 11px; height: 11px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* NOTICE BOXES */
-  .notice { padding: 8px 15px; font-size: 11px; display: flex; align-items: center; gap: 6px; border-top: 1px solid var(--border); }
-  .notice.green { background: var(--green-bg); color: var(--green); }
-  .notice.amber { background: var(--amber-bg); color: var(--amber); }
-
-  /* SETTINGS PANEL */
-  .icon-btn.settings-btn{border-color:var(--orange);color:var(--orange);}
-  .settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:2000;align-items:flex-start;justify-content:flex-end;}
-  .settings-overlay.open{display:flex;}
-  .settings-panel{background:var(--bg);width:340px;max-width:95vw;height:100vh;overflow-y:auto;box-shadow:-4px 0 24px rgba(0,0,0,0.15);display:flex;flex-direction:column;}
-  .settings-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border);background:var(--bg2);}
-  .settings-title{font-size:15px;font-weight:700;color:var(--text);}
-  .settings-close{background:none;border:none;cursor:pointer;color:var(--text2);font-size:20px;line-height:1;}
-  .settings-close:hover{color:var(--red);}
-  .settings-body{padding:16px 18px;flex:1;}
-  .settings-section{margin-bottom:1.5rem;}
-  .settings-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--orange);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
-  .settings-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
-  .settings-row label{font-size:12px;color:var(--text2);width:110px;flex-shrink:0;}
-  .settings-row input{flex:1;font-size:12px;padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);color:var(--text);}
-  .settings-row input:focus{outline:none;border-color:var(--orange);}
-  .settings-footer{padding:14px 18px;border-top:1px solid var(--border);background:var(--bg2);}
-  .settings-save{width:100%;font-size:13px;padding:8px;border-radius:var(--radius-sm);border:none;background:var(--orange);color:#fff;cursor:pointer;font-weight:700;}
-  .settings-save:hover{opacity:0.9;}
-  .settings-reset{width:100%;font-size:12px;padding:6px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);color:var(--text2);cursor:pointer;margin-top:6px;}
-  .settings-reset:hover{color:var(--red);border-color:var(--red);}
-
+:root{--o:#FE8630;--bg:#fff;--bg2:#f5f6f7;--bd:#e2e4e7;--t:#1a1d20;--t2:#6b7280;--gr:#3B6D11;--gr2:#EAF3DE;--re:#A32D2D;--re2:#FCEBEB;--am:#854F0B;--am2:#FAEEDA;--bl:#0C447C;--bl2:#E6F1FB;--r:8px;--rs:5px}
+@media(prefers-color-scheme:dark){:root{--bg:#1a1d20;--bg2:#23272b;--bd:#333a42;--t:#f0f1f2;--t2:#9ba3ad}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg2);color:var(--t);min-height:100vh}
+.wrap{max-width:980px;margin:0 auto;padding:1.25rem 1rem 3rem}
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-dot{width:38px;height:38px;border-radius:50%;background:var(--o);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-dot i{color:#fff;font-size:19px}
+.app-title{font-size:18px;font-weight:700;color:var(--t)}
+.app-sub{font-size:12px;color:var(--t2);margin-top:1px}
+.hdr-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.wpill{font-size:12px;padding:5px 12px;border-radius:var(--rs);background:var(--o);color:#fff;font-weight:700}
+.ibtn{font-size:12px;padding:5px 12px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--bg);color:var(--t);cursor:pointer;display:flex;align-items:center;gap:5px}
+.ibtn:hover{background:var(--bg2)}
+.ibtn.ob{border-color:var(--o);color:var(--o)}
+.abar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:var(--r);margin-bottom:1.25rem;font-size:12px;flex-wrap:wrap;gap:8px}
+.abar.pend{background:var(--am2);color:var(--am);border:1px solid #f0d49a}
+.abar.conn{background:var(--gr2);color:var(--gr);border:1px solid #b2d48a}
+.abar.err{background:var(--re2);color:var(--re);border:1px solid #f0b8b8}
+.abtn{font-size:12px;padding:5px 12px;border-radius:var(--rs);border:none;cursor:pointer;font-weight:700}
+.abtn.si{background:var(--o);color:#fff}
+.abtn.so{background:rgba(0,0,0,.12);color:inherit}
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
+@media(max-width:600px){.sgrid{grid-template-columns:repeat(2,1fr)}}
+.scard{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:12px 14px}
+.slbl{font-size:11px;color:var(--t2);margin-bottom:3px}
+.sval{font-size:22px;font-weight:700}
+.ssub{font-size:11px;color:var(--t2);margin-top:2px}
+.cg{color:var(--gr)}.ca{color:var(--am)}.cr{color:var(--re)}
+.nav{display:flex;border-bottom:1px solid var(--bd);margin-bottom:1.25rem;overflow-x:auto}
+.ntab{font-size:12px;padding:9px 13px;cursor:pointer;color:var(--t2);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.ntab i{font-size:13px}
+.ntab:hover{color:var(--t)}
+.ntab.active{color:var(--o);border-bottom-color:var(--o);font-weight:700}
+.card{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:1rem}
+.chdr{padding:11px 15px;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.chl{display:flex;align-items:center;gap:8px}
+.chl i{font-size:16px;color:var(--o)}
+.ctitle{font-size:13px;font-weight:700;color:var(--t)}
+.csub{font-size:11px;color:var(--t2);margin-top:1px}
+.tbadge{font-size:11px;padding:3px 9px;border-radius:var(--rs);background:var(--o);color:#fff;font-weight:700;white-space:nowrap}
+.twrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{padding:7px 10px;text-align:left;color:var(--t2);font-weight:700;border-bottom:1px solid var(--bd);font-size:11px;white-space:nowrap;background:var(--bg2)}
+td{padding:7px 10px;color:var(--t);border-bottom:1px solid var(--bd);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg2)}
+.ni{width:100%;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rs);padding:3px 6px;font-size:12px;color:var(--t);text-align:center}
+.ni:focus{outline:none;border-color:var(--o)}
+.ie{background:transparent;border:none;font-size:12px;color:var(--t);width:100%;padding:2px 4px;border-radius:4px;cursor:pointer}
+.ie:hover{background:var(--bg2);outline:1px dashed var(--bd)}
+.ie:focus{background:var(--bg2);outline:1px solid var(--o);cursor:text}
+.ien{background:transparent;border:none;font-size:12px;color:var(--t);width:100%;padding:2px 4px;border-radius:4px;cursor:pointer;text-align:center}
+.ien:hover{background:var(--bg2);outline:1px dashed var(--bd)}
+.ien:focus{background:var(--bg2);outline:1px solid var(--o)}
+.tf{width:100%;font-size:13px;border:none;background:transparent;color:var(--t);padding:0}
+.tf:focus{outline:none}
+.bdg{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:10px}
+.bg{background:var(--gr2);color:var(--gr)}.br{background:var(--re2);color:var(--re)}.ba{background:var(--am2);color:var(--am)}.bx{background:var(--bg2);color:var(--t2)}
+.pill{display:inline-block;font-size:10px;padding:2px 8px;border-radius:var(--rs);font-weight:700}
+.pon{background:var(--gr2);color:var(--gr)}.pof{background:var(--re2);color:var(--re)}.pri{background:var(--am2);color:var(--am)}
+.ptag{font-size:10px;padding:1px 7px;border-radius:var(--rs);background:var(--bl2);color:var(--bl)}
+.iph{font-size:10px;padding:2px 7px;border-radius:var(--rs);font-weight:700}
+.iph.hi{background:var(--re2);color:var(--re)}.iph.me{background:var(--am2);color:var(--am)}.iph.lo{background:var(--gr2);color:var(--gr)}
+.fn{font-size:10px;color:var(--t2);font-style:italic}
+.arow{display:flex;align-items:center;gap:10px;padding:11px 15px;border-bottom:1px solid var(--bd)}
+.arow:last-child{border-bottom:none}
+.anum{width:24px;height:24px;border-radius:50%;background:var(--o);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cw{display:flex;align-items:flex-start;gap:10px;padding:10px 15px;border-bottom:1px solid var(--bd)}
+.cw:last-child{border-bottom:none}
+.hlrow{padding:10px 15px;border-bottom:1px solid var(--bd)}
+.hlrow:last-child{border-bottom:none}
+.hlp{font-size:11px;font-weight:700;color:var(--o);margin-bottom:4px}
+.rbtn{background:none;border:none;cursor:pointer;color:var(--t2);padding:2px 4px;font-size:13px;border-radius:4px}
+.rbtn:hover{color:var(--re);background:var(--re2)}
+.addbtn{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--o);padding:9px 15px;cursor:pointer;border:none;background:none;width:100%;text-align:left;font-weight:700;border-top:1px solid var(--bd)}
+.addbtn:hover{background:var(--bg2)}
+.addbtn i{font-size:14px}
+.ehint{font-size:10px;color:var(--t2);padding:6px 15px;border-top:1px solid var(--bd);display:flex;align-items:center;gap:5px;background:var(--bg2)}
+.rtbtn{width:32px;height:32px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--bg2);color:var(--t);cursor:pointer;font-size:12px;font-weight:700}
+.rtbtn:hover{border-color:var(--o);color:var(--o)}
+.rtbtn.sel{background:var(--o);color:#fff;border-color:var(--o)}
+.sctabs{display:flex;padding:0 15px;border-bottom:1px solid var(--bd);background:var(--bg2);overflow-x:auto}
+.sctab{font-size:11px;padding:8px 12px;cursor:pointer;color:var(--t2);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;font-weight:500}
+.sctab:hover{color:var(--t)}
+.sctab.active{color:var(--o);border-bottom-color:var(--o);font-weight:700}
+select{font-size:12px;padding:3px 7px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--bg2);color:var(--t);cursor:pointer}
+select:focus{outline:none;border-color:var(--o)}
+.notice{padding:8px 15px;font-size:11px;display:flex;align-items:center;gap:6px;border-top:1px solid var(--bd)}
+.notice.gn{background:var(--gr2);color:var(--gr)}.notice.am{background:var(--am2);color:var(--am)}
+.moverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
+.moverlay.open{display:flex}
+.modal{background:var(--bg);border-radius:var(--r);border:1px solid var(--bd);padding:1.5rem;width:380px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.mtitle{font-size:15px;font-weight:700;color:var(--t);margin-bottom:1.1rem}
+.fld{margin-bottom:12px}
+.fld label{display:block;font-size:11px;font-weight:700;color:var(--t2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.fld input,.fld select,.fld textarea{width:100%;font-size:13px;padding:7px 10px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--bg);color:var(--t)}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--o)}
+.fld textarea{resize:vertical;min-height:64px}
+.mbtns{display:flex;gap:8px;justify-content:flex-end;margin-top:1.1rem}
+.bcnl{font-size:13px;padding:7px 14px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--bg);color:var(--t);cursor:pointer}
+.bsav{font-size:13px;padding:7px 14px;border-radius:var(--rs);border:none;background:var(--o);color:#fff;cursor:pointer;font-weight:700}
+.soverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;align-items:flex-start;justify-content:flex-end}
+.soverlay.open{display:flex}
+.spanel{background:var(--bg);width:340px;max-width:95vw;height:100vh;overflow-y:auto;box-shadow:-4px 0 24px rgba(0,0,0,.15);display:flex;flex-direction:column}
+.shdr{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--bd);background:var(--bg2)}
+.stitle{font-size:15px;font-weight:700;color:var(--t)}
+.sclose{background:none;border:none;cursor:pointer;color:var(--t2);font-size:20px;line-height:1}
+.sclose:hover{color:var(--re)}
+.sbody{padding:16px 18px;flex:1}
+.ssec{margin-bottom:1.5rem}
+.ssectitle{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--o);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--bd)}
+.srow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.srow label{font-size:12px;color:var(--t2);width:110px;flex-shrink:0}
+.srow input{flex:1;font-size:12px;padding:5px 8px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--bg);color:var(--t)}
+.srow input:focus{outline:none;border-color:var(--o)}
+.sfoot{padding:14px 18px;border-top:1px solid var(--bd);background:var(--bg2)}
+.ssave{width:100%;font-size:13px;padding:8px;border-radius:var(--rs);border:none;background:var(--o);color:#fff;cursor:pointer;font-weight:700}
+.sreset{width:100%;font-size:12px;padding:6px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--bg);color:var(--t2);cursor:pointer;margin-top:6px}
+.sreset:hover{color:var(--re);border-color:var(--re)}
+.spin{display:inline-block;width:11px;height:11px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
-<div class="app-wrap">
-  <div class="header">
+<div class="wrap">
+  <div class="hdr">
     <div class="logo">
       <div class="logo-dot"><i class="ti ti-car"></i></div>
       <div>
-        <div class="app-title" id="display-org-name">Journey Auto Repair</div>
-        <div class="app-sub" id="display-meeting-name">Level 10 weekly meeting</div>
+        <div class="app-title" id="org-name">Journey Auto Repair</div>
+        <div class="app-sub" id="meeting-name">Level 10 weekly meeting</div>
       </div>
     </div>
-    <div class="hdr-right">
-      <div class="week-pill" id="cur-week-label">Loading...</div>
-      <button class="icon-btn" onclick="addWeek()"><i class="ti ti-calendar-plus"></i> New week</button>
-      <button class="icon-btn settings-btn" onclick="openSettings()"><i class="ti ti-settings"></i> Settings</button>
+    <div class="hdr-r">
+      <div class="wpill" id="wk-label">Loading...</div>
+      <button class="ibtn" onclick="addWeek()"><i class="ti ti-calendar-plus"></i> New week</button>
+      <button class="ibtn ob" onclick="openSettings()"><i class="ti ti-settings"></i> Settings</button>
     </div>
   </div>
 
-  <div class="auth-bar pending" id="auth-bar">
+  <div class="abar pend" id="abar">
     <div style="display:flex;align-items:center;gap:8px">
       <i class="ti ti-brand-microsoft" style="font-size:16px"></i>
-      <span id="auth-status-text">Sign in to connect Microsoft 365 — tasks sync to Planner & To Do automatically</span>
+      <span id="abar-txt">Sign in to connect Microsoft 365 — tasks sync to Planner & To Do automatically</span>
     </div>
-    <button class="auth-btn sign-in" id="auth-btn" onclick="handleAuth()">Sign in with Microsoft</button>
+    <button class="abtn si" id="abar-btn" onclick="handleAuth()">Sign in with Microsoft</button>
   </div>
 
-  <div class="summary-grid" id="summary-grid"></div>
+  <div class="sgrid" id="sgrid"></div>
+  <div class="nav" id="mainnav"></div>
 
-  <div class="nav" id="main-nav">
-    <div class="nav-tab active" onclick="switchSection('agenda',this)"><i class="ti ti-list-check"></i>Agenda</div>
-    <div class="nav-tab" onclick="switchSection('headlines',this)"><i class="ti ti-speakerphone"></i>Headlines</div>
-    <div class="nav-tab" onclick="switchSection('scorecard',this)"><i class="ti ti-chart-bar"></i>Scorecard</div>
-    <div class="nav-tab" onclick="switchSection('rocks',this)"><i class="ti ti-mountain"></i>Rocks</div>
-    <div class="nav-tab" onclick="switchSection('todos',this)"><i class="ti ti-checkbox"></i>To-Dos</div>
-    <div class="nav-tab" onclick="switchSection('ids',this)"><i class="ti ti-flame"></i>IDS</div>
-    <div class="nav-tab" onclick="switchSection('conclude',this)"><i class="ti ti-star"></i>Conclude</div>
-  </div>
+  <div class="moverlay" id="modal"><div class="modal">
+    <div class="mtitle" id="mtitle">Add item</div>
+    <div id="mfields"></div>
+    <div class="mbtns"><button class="bcnl" onclick="closeModal()">Cancel</button><button class="bsav" onclick="saveModal()">Save</button></div>
+  </div></div>
 
-  <div class="modal-overlay" id="modal-bg">
-    <div class="modal">
-      <div class="modal-title" id="modal-title">Add item</div>
-      <div id="modal-fields"></div>
-      <div class="modal-btns">
-        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-        <button class="btn-save" onclick="saveModal()">Save</button>
+  <div class="soverlay" id="soverlay"><div class="spanel">
+    <div class="shdr"><div class="stitle"><i class="ti ti-settings" style="color:var(--o);margin-right:6px"></i>Settings</div><button class="sclose" onclick="closeSettings()"><i class="ti ti-x"></i></button></div>
+    <div class="sbody">
+      <div class="ssec"><div class="ssectitle">Organization</div>
+        <div class="srow"><label>Org name</label><input id="s-org"/></div>
+        <div class="srow"><label>Meeting name</label><input id="s-mtg"/></div>
       </div>
+      <div class="ssec"><div class="ssectitle">Main tabs</div>
+        <div class="srow"><label>Tab 1 (Agenda)</label><input id="sn0"/></div>
+        <div class="srow"><label>Tab 2 (Headlines)</label><input id="sn1"/></div>
+        <div class="srow"><label>Tab 3 (Scorecard)</label><input id="sn2"/></div>
+        <div class="srow"><label>Tab 4 (Rocks)</label><input id="sn3"/></div>
+        <div class="srow"><label>Tab 5 (To-Dos)</label><input id="sn4"/></div>
+        <div class="srow"><label>Tab 6 (IDS)</label><input id="sn5"/></div>
+        <div class="srow"><label>Tab 7 (Conclude)</label><input id="sn6"/></div>
+      </div>
+      <div class="ssec"><div class="ssectitle">Scorecard sub-tabs</div>
+        <div class="srow"><label>Sub-tab 1</label><input id="ss0"/></div>
+        <div class="srow"><label>Sub-tab 2</label><input id="ss1"/></div>
+        <div class="srow"><label>Sub-tab 3</label><input id="ss2"/></div>
+        <div class="srow"><label>Sub-tab 4</label><input id="ss3"/></div>
+      </div>
+      <div class="ssec"><div class="ssectitle">Agenda items</div><div id="sagenda"></div></div>
     </div>
-  </div>
-
-  
-  <!-- SETTINGS PANEL -->
-  <div class="settings-overlay" id="settings-overlay">
-    <div class="settings-panel">
-      <div class="settings-hdr">
-        <div class="settings-title"><i class="ti ti-settings" style="color:var(--orange);margin-right:6px"></i>App settings</div>
-        <button class="settings-close" onclick="closeSettings()"><i class="ti ti-x"></i></button>
-      </div>
-      <div class="settings-body">
-        <div class="settings-section">
-          <div class="settings-section-title">Organization</div>
-          <div class="settings-row"><label>Org name</label><input id="s-org" placeholder="e.g. Journey Auto Repair" /></div>
-          <div class="settings-row"><label>Meeting name</label><input id="s-meeting" placeholder="e.g. Level 10 weekly meeting" /></div>
-        </div>
-        <div class="settings-section">
-          <div class="settings-section-title">Main navigation tabs</div>
-          <div class="settings-row"><label>Tab 1 (Agenda)</label><input id="s-nav-0" /></div>
-          <div class="settings-row"><label>Tab 2 (Headlines)</label><input id="s-nav-1" /></div>
-          <div class="settings-row"><label>Tab 3 (Scorecard)</label><input id="s-nav-2" /></div>
-          <div class="settings-row"><label>Tab 4 (Rocks)</label><input id="s-nav-3" /></div>
-          <div class="settings-row"><label>Tab 5 (To-Dos)</label><input id="s-nav-4" /></div>
-          <div class="settings-row"><label>Tab 6 (IDS)</label><input id="s-nav-5" /></div>
-          <div class="settings-row"><label>Tab 7 (Conclude)</label><input id="s-nav-6" /></div>
-        </div>
-        <div class="settings-section">
-          <div class="settings-section-title">Scorecard sub-tabs</div>
-          <div class="settings-row"><label>Sub-tab 1</label><input id="s-sc-0" /></div>
-          <div class="settings-row"><label>Sub-tab 2</label><input id="s-sc-1" /></div>
-          <div class="settings-row"><label>Sub-tab 3</label><input id="s-sc-2" /></div>
-          <div class="settings-row"><label>Sub-tab 4</label><input id="s-sc-3" /></div>
-        </div>
-        <div class="settings-section">
-          <div class="settings-section-title">Agenda item labels &amp; times</div>
-          <div id="s-agenda-rows"></div>
-        </div>
-      </div>
-      <div class="settings-footer">
-        <button class="settings-save" onclick="saveSettings()">Save settings</button>
-        <button class="settings-reset" onclick="resetSettings()">Reset to defaults</button>
-      </div>
+    <div class="sfoot">
+      <button class="ssave" onclick="saveSettings()">Save settings</button>
+      <button class="sreset" onclick="resetSettings()">Reset to defaults</button>
     </div>
-  </div>
+  </div></div>
 
-  <div id="section-content"></div>
+  <div id="content"></div>
 </div>
-
 <script>
-// ── CONFIG ──────────────────────────────────────────────────────────────────
-const CLIENT_ID = '2e3191bd-33d5-4a17-bed6-120fe0476f6d';
-const TENANT_ID = '51d52d84-027d-48f3-8d09-628380cb4704';
-const SCOPES    = 'Tasks.ReadWrite Group.Read.All User.Read User.ReadBasic.All Sites.ReadWrite.All';
-const REDIRECT_URI = location.href.split('?')[0].split('#')[0];
-const AUTH_URL  = `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/authorize`;
+// ── CONFIG ───────────────────────────────────────────────────────────────────
+const CLIENT_ID='2e3191bd-33d5-4a17-bed6-120fe0476f6d';
+const TENANT_ID='51d52d84-027d-48f3-8d09-628380cb4704';
+const SCOPES='Tasks.ReadWrite Group.Read.All Group.ReadWrite.All User.Read User.ReadBasic.All Sites.ReadWrite.All';
+const REDIRECT_URI=location.href.split('?')[0].split('#')[0];
+const AUTH_URL=`https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/authorize`;
+const SP_HOST='journeyautorepair.sharepoint.com';
+const SP_SITE='/sites/Level10MeetingData';
+const SP_LIST='Level10AppData';
+const SP_TITLE='SharedAppState';
 
-// ── SHAREPOINT CONFIG ───────────────────────────────────────────────────────
-const SP_SITE = 'journeyautorepair.sharepoint.com';
-const SP_SITE_PATH = '/sites/Level10MeetingData';
-const SP_LIST = 'Level10AppData';
-const SP_ITEM_TITLE = 'SharedAppState';
-let spItemId = null; // ID of the SharePoint list item storing app data
-let syncInterval = null;
-let lastSyncHash = '';
-
-// ── AUTH STATE ──────────────────────────────────────────────────────────────
-let msToken = null, msUser = null, msMembers = [], msPlanId = null, msBuckets = {};
-
-// ── APP DATA ────────────────────────────────────────────────────────────────
-const AGENDA_ITEMS=[
-  {label:'Segue / check-in',minutes:5},
-  {label:'Scorecard review',minutes:5},
-  {label:'Rock review',minutes:5},
-  {label:'Customer / employee headlines',minutes:5},
-  {label:'To-do list review',minutes:5},
-  {label:'IDS — Identify, Discuss, Solve',minutes:60},
+// ── DEFAULTS ─────────────────────────────────────────────────────────────────
+const DEF_NAV=['Agenda','Headlines','Scorecard','Rocks','To-Dos','IDS','Conclude'];
+const DEF_ICONS=['ti-list-check','ti-speakerphone','ti-chart-bar','ti-mountain','ti-checkbox','ti-flame','ti-star'];
+const DEF_KEYS=['agenda','headlines','scorecard','rocks','todos','ids','conclude'];
+const DEF_SC=['Corporate Goals','New Hope','Andover','Individual'];
+const DEF_SC_KEYS=['corporate','newhope','andover','individual'];
+const DEF_AGENDA=[
+  {label:'Segue / check-in',minutes:5},{label:'Scorecard review',minutes:5},
+  {label:'Rock review',minutes:5},{label:'Customer / employee headlines',minutes:5},
+  {label:'To-do list review',minutes:5},{label:'IDS — Identify, Discuss, Solve',minutes:60},
   {label:'Conclude & rate the meeting',minutes:5}
 ];
-const SC_TABS=['Corporate Goals','New Hope','Andover','Individual'];
-const SC_KEYS=['corporate','newhope','andover','individual'];
 const DEF_CORP=[
   {id:1,metric:'Architect Meetings',owner:'Devan',goal:'4',freq:'Weekly',values:{}},
   {id:2,metric:'Credit Card Receipts Audit',owner:'Najla',goal:'4',freq:'Weekly',values:{}},
@@ -338,844 +238,421 @@ const DEF_LOC=[
   {id:5,metric:'Social Media Pix',owner:'Store Manager',goal:'2',freq:'2-4/month',values:{}}
 ];
 
-let activeSection='agenda', activeSCTab=0, modalContext=null;
+// ── STATE ────────────────────────────────────────────────────────────────────
+let msToken=null,msUser=null,msMembers=[],msPlanId=null,msBuckets={};
+let spItemId=null,syncTimer=null,lastHash='';
+let activeSection='agenda',activeSCTab=0,modalCtx=null;
 
-function getWeekLabel(offset){
-  const d=new Date(),day=d.getDay(),mon=new Date(d);
-  mon.setDate(d.getDate()-(day===0?6:day-1)+offset*7);
-  return 'Wk '+mon.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-}
-function defaultData(){
-  return {
-    weeks:[getWeekLabel(0)],currentWeekIndex:0,agendaDone:{},
-    headlines:[
-      {id:1,person:'Andy',text:''},{id:2,person:'Devan',text:''},{id:3,person:'Najla',text:''},
-      {id:4,person:'New Hope Manager',text:''},{id:5,person:'Andover Manager',text:''}
-    ],
-    scorecard:{
-      corporate:JSON.parse(JSON.stringify(DEF_CORP)),
-      newhope:JSON.parse(JSON.stringify(DEF_LOC)),
-      andover:JSON.parse(JSON.stringify(DEF_LOC)),
-      individual:[]
-    },
-    rocks:[],todos:[],ids:[],ratings:{}
-  };
-}
-function load(){try{const r=localStorage.getItem('journey_l10_v6');if(r)return JSON.parse(r);}catch(e){}return defaultData();}
-function save(){try{localStorage.setItem('journey_l10_v6',JSON.stringify(D));}catch(e){}}
-let D=load();
-function curWeek(){return D.weeks[D.currentWeekIndex]||D.weeks[D.weeks.length-1];}
-
-// ── MICROSOFT AUTH ──────────────────────────────────────────────────────────
-function isInsideTeams(){
-  try{
-    return window.parent!==window||
-      window.navigator.userAgent.includes('Teams')||
-      (typeof microsoftTeams!=='undefined'&&!!microsoftTeams);
-  }catch(e){return false;}
+// ── SETTINGS ─────────────────────────────────────────────────────────────────
+function defSettings(){return{orgName:'Journey Auto Repair',meetingName:'Level 10 weekly meeting',navTabs:[...DEF_NAV],scTabs:[...DEF_SC],agendaItems:JSON.parse(JSON.stringify(DEF_AGENDA))};}
+function loadSettings(){try{const r=localStorage.getItem('jl10_settings');if(r)return JSON.parse(r);}catch(e){}return defSettings();}
+function saveSettings2(s){try{localStorage.setItem('jl10_settings',JSON.stringify(s));}catch(e){}}
+let ST=loadSettings();
+function applySettings(){
+  const e1=document.getElementById('org-name'),e2=document.getElementById('meeting-name');
+  if(e1)e1.textContent=ST.orgName;if(e2)e2.textContent=ST.meetingName;
+  document.title=ST.orgName+' — '+ST.meetingName;
 }
 
+// ── DATA ─────────────────────────────────────────────────────────────────────
+function defData(){return{
+  weeks:[wkLabel(0)],wkIdx:0,agDone:{},
+  headlines:[{id:1,person:'Andy',text:''},{id:2,person:'Devan',text:''},{id:3,person:'Najla',text:''},{id:4,person:'New Hope Manager',text:''},{id:5,person:'Andover Manager',text:''}],
+  scorecard:{corporate:JSON.parse(JSON.stringify(DEF_CORP)),newhope:JSON.parse(JSON.stringify(DEF_LOC)),andover:JSON.parse(JSON.stringify(DEF_LOC)),individual:[]},
+  rocks:[],todos:[],ids:[],ratings:{}
+};}
+function loadLocal(){try{const r=localStorage.getItem('jl10_data');if(r)return JSON.parse(r);}catch(e){}return defData();}
+function saveLocal(){try{localStorage.setItem('jl10_data',JSON.stringify(D));}catch(e){}}
+let D=loadLocal();
+
+function save(){
+  saveLocal();
+  if(msToken)pushSP().catch(e=>console.warn('SP push error:',e));
+}
+
+function wkLabel(off){
+  const d=new Date(),day=d.getDay(),m=new Date(d);
+  m.setDate(d.getDate()-(day===0?6:day-1)+off*7);
+  return 'Wk '+m.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function curWeek(){return D.weeks[D.wkIdx]||D.weeks[D.weeks.length-1];}
+function addWeek(){const n=wkLabel(D.weeks.length);if(!D.weeks.includes(n)){D.weeks.push(n);D.wkIdx=D.weeks.length-1;}save();render();}
+
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+function isTeams(){try{return window.parent!==window||window.navigator.userAgent.includes('Teams')||(typeof microsoftTeams!=='undefined'&&!!microsoftTeams);}catch(e){return false;}}
 function handleAuth(){
   if(msToken){signOut();return;}
-  const authUrl=AUTH_URL+'?'+new URLSearchParams({
-    client_id:CLIENT_ID,response_type:'token',redirect_uri:REDIRECT_URI,
-    scope:SCOPES,response_mode:'fragment',prompt:'select_account'
-  });
-  // Inside Teams — use Teams popup auth
-  if(isInsideTeams()&&typeof microsoftTeams!=='undefined'){
+  const url=AUTH_URL+'?'+new URLSearchParams({client_id:CLIENT_ID,response_type:'token',redirect_uri:REDIRECT_URI,scope:SCOPES,response_mode:'fragment',prompt:'select_account'});
+  if(isTeams()&&typeof microsoftTeams!=='undefined'){
     try{
-      microsoftTeams.authentication.authenticate({
-        url:authUrl,width:600,height:535,
-        successCallback:function(result){
-          const params=new URLSearchParams((result||'').replace('#',''));
-          msToken=params.get('access_token');
-          if(msToken){history.replaceState(null,'',location.pathname);onSignedIn();}
-        },
-        failureCallback:function(reason){
-          console.warn('Teams popup auth failed:',reason);
-          location.href=authUrl;
-        }
-      });
-      return;
-    }catch(e){console.warn('Teams auth error:',e);}
+      microsoftTeams.authentication.authenticate({url,width:600,height:535,
+        successCallback:r=>{const p=new URLSearchParams((r||'').replace('#',''));msToken=p.get('access_token');if(msToken){history.replaceState(null,'',location.pathname);onSignedIn();}},
+        failureCallback:()=>location.href=url
+      });return;
+    }catch(e){}
   }
-  // Regular browser — redirect in same tab (cleanest experience)
-  location.href=authUrl;
+  location.href=url;
 }
-function signOut(){msToken=null;msUser=null;msMembers=[];msPlanId=null;msBuckets={};updateAuthBar();render();}
+function signOut(){msToken=null;msUser=null;msMembers=[];msPlanId=null;msBuckets={};spItemId=null;if(syncTimer)clearInterval(syncTimer);setAbar();render();}
 
 async function onSignedIn(){
-  updateAuthBar('pending','Connecting to Microsoft 365...');
+  setAbar('pend','Connecting to Microsoft 365...');
   try{
-    msUser=await graphGet('me');
+    msUser=await gGet('me');
     await loadMembers();
     await loadPlans();
-    // Load shared data from SharePoint — replaces local data with org-wide shared state
-    updateAuthBar('pending','Loading shared meeting data...');
-    await loadSharedData();
-    startSyncLoop();
-    updateAuthBar('connected');
+    setAbar('pend','Loading shared data...');
+    await loadSP();
+    startSync();
+    setAbar('conn');
     render();
-  }catch(e){
-    console.warn('onSignedIn error:',e);
-    updateAuthBar('error','Connection failed — check app permissions in Azure');
+  }catch(e){console.warn('signin error:',e);setAbar('err','Connection failed — check app permissions in Azure');}
+}
+
+function setAbar(state,msg){
+  const bar=document.getElementById('abar'),txt=document.getElementById('abar-txt'),btn=document.getElementById('abar-btn');
+  if(!bar)return;
+  if(state==='conn'||(!state&&msToken&&msUser)){
+    bar.className='abar conn';
+    txt.innerHTML=`Connected as <strong>${msUser?.displayName||msUser?.mail||'you'}</strong>${msPlanId?' — Planner connected ✅':' — Planner not found ⚠️'}`;
+    btn.className='abtn so';btn.textContent='Sign out';btn.style.display='';
+  }else if(state==='pend'){
+    bar.className='abar pend';txt.textContent=msg||'Connecting...';btn.style.display='none';
+  }else if(state==='err'){
+    bar.className='abar err';txt.textContent=msg;btn.style.display='';btn.className='abtn si';btn.textContent='Retry';
+  }else{
+    bar.className='abar pend';txt.textContent='Sign in to connect Microsoft 365 — tasks sync to Planner & To Do automatically';
+    btn.style.display='';btn.className='abtn si';btn.textContent='Sign in with Microsoft';
   }
 }
 
-async function graphGet(path,qs=''){
-  const r=await fetch(`https://graph.microsoft.com/v1.0/${path}${qs}`,{headers:{Authorization:`Bearer ${msToken}`}});
-  if(!r.ok)throw new Error(r.status);
-  return r.json();
-}
-async function graphPost(path,body){
-  const r=await fetch(`https://graph.microsoft.com/v1.0/${path}`,{
-    method:'POST',headers:{Authorization:`Bearer ${msToken}`,'Content-Type':'application/json'},body:JSON.stringify(body)
-  });
-  if(!r.ok){const e=await r.text();throw new Error(e);}
-  return r.json();
-}
-async function graphPatch(path,body,etag){
-  const h={Authorization:`Bearer ${msToken}`,'Content-Type':'application/json'};
-  if(etag)h['If-Match']=etag;
-  const r=await fetch(`https://graph.microsoft.com/v1.0/${path}`,{method:'PATCH',headers:h,body:JSON.stringify(body)});
-  if(!r.ok)throw new Error(r.status);
-  return r.status===204?null:r.json();
-}
+// ── GRAPH API ────────────────────────────────────────────────────────────────
+async function gGet(path,qs=''){const r=await fetch(`https://graph.microsoft.com/v1.0/${path}${qs}`,{headers:{Authorization:`Bearer ${msToken}`}});if(!r.ok)throw new Error(r.status);return r.json();}
+async function gPost(path,body){const r=await fetch(`https://graph.microsoft.com/v1.0/${path}`,{method:'POST',headers:{Authorization:`Bearer ${msToken}`,'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function gPatch(path,body,etag){const h={Authorization:`Bearer ${msToken}`,'Content-Type':'application/json'};if(etag)h['If-Match']=etag;const r=await fetch(`https://graph.microsoft.com/v1.0/${path}`,{method:'PATCH',headers:h,body:JSON.stringify(body)});if(!r.ok)throw new Error(r.status);return r.status===204?null:r.json();}
 
-// ── SHAREPOINT DATA SYNC ────────────────────────────────────────────────────
-async function spGet(path){
-  const r=await fetch(`https://graph.microsoft.com/v1.0/sites/${SP_SITE}:${SP_SITE_PATH}:${path}`,{
-    headers:{Authorization:`Bearer ${msToken}`,'Accept':'application/json'}
-  });
-  if(!r.ok)throw new Error('SP GET '+r.status);
-  return r.json();
-}
-async function spPost(path,body){
-  const r=await fetch(`https://graph.microsoft.com/v1.0/sites/${SP_SITE}:${SP_SITE_PATH}:${path}`,{
-    method:'POST',
-    headers:{Authorization:`Bearer ${msToken}`,'Content-Type':'application/json'},
-    body:JSON.stringify(body)
-  });
-  if(!r.ok)throw new Error('SP POST '+r.status);
-  return r.json();
-}
-async function spPatch(path,body){
-  const r=await fetch(`https://graph.microsoft.com/v1.0/sites/${SP_SITE}:${SP_SITE_PATH}:${path}`,{
-    method:'PATCH',
-    headers:{Authorization:`Bearer ${msToken}`,'Content-Type':'application/json'},
-    body:JSON.stringify(body)
-  });
-  if(!r.ok)throw new Error('SP PATCH '+r.status);
-  return r.status===204?null:r.json();
-}
-
-async function loadSharedData(){
+// ── SHAREPOINT ────────────────────────────────────────────────────────────────
+const SP_BASE=`https://graph.microsoft.com/v1.0/sites/${SP_HOST}:${SP_SITE}:/lists/${SP_LIST}`;
+async function loadSP(){
   try{
-    // Find existing item
-    const res=await spGet(`/lists/${SP_LIST}/items?$filter=fields/Title eq '${SP_ITEM_TITLE}'&$expand=fields&$top=1`);
-    const items=res.value||[];
+    const res=await fetch(`${SP_BASE}/items?$filter=fields/Title eq '${SP_TITLE}'&$expand=fields&$top=1`,{headers:{Authorization:`Bearer ${msToken}`}});
+    if(!res.ok)throw new Error('SP load '+res.status);
+    const data=await res.json();
+    const items=data.value||[];
     if(items.length>0){
       spItemId=items[0].id;
       const json=items[0].fields?.JsonData;
       if(json){
-        const remote=JSON.parse(json);
-        const remoteHash=JSON.stringify(remote);
-        if(remoteHash!==lastSyncHash){
-          // Merge remote data — preserve local settings if newer
-          const localSettings=D.settings;
-          D=remote;
-          if(!D.settings)D.settings=localSettings;
-          lastSyncHash=remoteHash;
-          save(); // also keep local copy
-          render();
-          console.log('Loaded shared data from SharePoint');
-        }
+        try{
+          const remote=JSON.parse(json);
+          const rh=JSON.stringify(remote);
+          if(rh!==lastHash){D=remote;lastHash=rh;saveLocal();console.log('Loaded from SharePoint');}
+        }catch(e){console.warn('SP parse error:',e);}
       }
-    } else {
-      // No item yet — create one with current data
-      await pushSharedData();
+    }else{
+      await pushSP();// create first item
     }
-  }catch(e){console.warn('loadSharedData error:',e);}
+  }catch(e){console.warn('loadSP error:',e);}
 }
-
-async function pushSharedData(){
+async function pushSP(){
   try{
     const json=JSON.stringify(D);
-    const hash=json;
-    if(hash===lastSyncHash)return; // no change
-    lastSyncHash=hash;
+    if(json===lastHash)return;
+    lastHash=json;
+    const body={fields:{Title:SP_TITLE,JsonData:json}};
     if(spItemId){
-      // Update existing item
-      await spPatch(`/lists/${SP_LIST}/items/${spItemId}/fields`,{
-        JsonData:json
-      });
-    } else {
-      // Create new item
-      const res=await spPost(`/lists/${SP_LIST}/items`,{
-        fields:{Title:SP_ITEM_TITLE,JsonData:json}
-      });
-      spItemId=res.id;
+      await fetch(`${SP_BASE}/items/${spItemId}/fields`,{method:'PATCH',headers:{Authorization:`Bearer ${msToken}`,'Content-Type':'application/json'},body:JSON.stringify({JsonData:json})});
+    }else{
+      const r=await fetch(`${SP_BASE}/items`,{method:'POST',headers:{Authorization:`Bearer ${msToken}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+      if(r.ok){const d=await r.json();spItemId=d.id;}
     }
-    console.log('Pushed shared data to SharePoint');
-  }catch(e){console.warn('pushSharedData error:',e);}
+  }catch(e){console.warn('pushSP error:',e);}
+}
+function startSync(){
+  if(syncTimer)clearInterval(syncTimer);
+  syncTimer=setInterval(async()=>{if(msToken)await loadSP().then(()=>render());},15000);
 }
 
-function startSyncLoop(){
-  // Pull fresh data from SharePoint every 15 seconds
-  if(syncInterval)clearInterval(syncInterval);
-  syncInterval=setInterval(async()=>{
-    if(msToken)await loadSharedData();
-  },15000);
-}
-
-// Override save() to also push to SharePoint
-const _localSave=save;
-function save(){
-  _localSave();
-  if(msToken)pushSharedData().catch(e=>console.warn('push error:',e));
-}
-
+// ── MEMBERS ───────────────────────────────────────────────────────────────────
 async function loadMembers(){
   try{
-    // Pull only real enabled member accounts ordered by name
-    const r=await graphGet('users',
-      '?$select=id,displayName,mail,userType,accountEnabled'+
-      '&$filter=accountEnabled eq true and userType eq 'Member''+
-      '&$top=100&$orderby=displayName'
-    );
-    msMembers=(r.value||[]).filter(m=>
-      m.displayName&&m.mail&&
-      m.mail.includes('@')&&
-      !m.mail.includes('#EXT#')&&
-      !m.displayName.toLowerCase().includes('admin')&&
-      !m.displayName.toLowerCase().includes('service')&&
-      !m.displayName.toLowerCase().includes('sharepoint')&&
-      !m.displayName.toLowerCase().includes('noreply')
-    );
-    console.log('Org members loaded:',msMembers.map(m=>m.displayName));
+    const r=await gGet('users','?$select=id,displayName,mail,accountEnabled&$filter=accountEnabled eq true&$top=100&$orderby=displayName');
+    msMembers=(r.value||[]).filter(m=>m.displayName&&m.mail&&m.mail.toLowerCase().includes('@journeyautorepair.com'));
+    console.log('Members:',msMembers.map(m=>m.displayName));
   }catch(e){
-    // Fallback — filter by your domain only
-    try{
-      const r=await graphGet('users','?$select=id,displayName,mail&$top=100&$orderby=displayName');
-      msMembers=(r.value||[]).filter(m=>
-        m.displayName&&m.mail&&
-        m.mail.toLowerCase().includes('@journeyautorepair.com')
-      );
-    }catch(e2){msMembers=[];}
+    try{const r=await gGet('users','?$select=id,displayName,mail&$top=100');msMembers=(r.value||[]).filter(m=>m.mail&&m.mail.includes('@journeyautorepair.com'));}
+    catch(e2){msMembers=[];}
   }
 }
+
+// ── PLANNER ───────────────────────────────────────────────────────────────────
 async function loadPlans(){
   try{
-    // Step 1 — try to find existing Level 10 plan across all user plans
     let all=[];
-    try{const r=await graphGet('me/planner/plans');all=r.value||[];}catch(e){}
-
-    // Step 2 — also check all groups the user belongs to
+    try{const r=await gGet('me/planner/plans');all=r.value||[];}catch(e){}
     try{
-      const grps=await graphGet('me/memberOf','?$select=id,displayName');
-      for(const g of(grps.value||[])){
-        try{
-          const gplans=await graphGet(`groups/${g.id}/planner/plans`);
-          all=[...all,...(gplans.value||[])];
-        }catch(e){}
+      const g=await gGet('me/memberOf','?$select=id,displayName');
+      for(const grp of(g.value||[])){
+        try{const p=await gGet(`groups/${grp.id}/planner/plans`);all=[...all,...(p.value||[])];}catch(e){}
       }
     }catch(e){}
-
-    // Step 3 — deduplicate by id
-    const seen=new Set();
-    all=all.filter(p=>{if(seen.has(p.id))return false;seen.add(p.id);return true;});
-
-    // Step 4 — look for a Level 10 plan
-    const l10=all.find(p=>p.title&&(
-      p.title.toLowerCase().includes('level10')||
-      p.title.toLowerCase().includes('level 10')||
-      p.title.toLowerCase().includes('journey auto level')
-    ));
-
-    if(l10){
-      msPlanId=l10.id;
-      msAllPlans=all;
-      await loadBuckets();
-      console.log('Found existing Level 10 plan:',l10.title);
-      return;
-    }
-
-    // Step 5 — store all plans for user to pick from
-    msAllPlans=all;
-
-    // Step 6 — no plan found, create one
-    if(!msPlanId){
-      console.log('No Level 10 plan found — creating one...');
-      await createLevel10Plan();
-    }
-  }catch(e){console.warn('loadPlans error:',e);}
+    const seen=new Set();all=all.filter(p=>{if(seen.has(p.id))return false;seen.add(p.id);return true;});
+    const l10=all.find(p=>p.title&&(p.title.toLowerCase().includes('level10')||p.title.toLowerCase().includes('level 10')||p.title.toLowerCase().includes('journey auto level')));
+    if(l10){msPlanId=l10.id;await loadBuckets();return;}
+    if(all.length){msPlanId=all[0].id;await loadBuckets();return;}
+    await createPlan();
+  }catch(e){console.warn('loadPlans:',e);}
 }
-
-async function createLevel10Plan(){
+async function createPlan(){
   try{
-    // Need a group to create a plan — use first available group
-    const grps=await graphGet('me/memberOf','?$select=id,displayName');
-    const groups=(grps.value||[]).filter(g=>g['@odata.type']==='#microsoft.graph.group');
-    if(!groups.length){
-      console.warn('No groups found to create Planner plan');
-      showPlannerSetupNotice();
-      return;
-    }
-    // Prefer a group with "corporate" or "journey" in the name
-    const preferred=groups.find(g=>g.displayName&&(
-      g.displayName.toLowerCase().includes('corporate')||
-      g.displayName.toLowerCase().includes('journey')||
-      g.displayName.toLowerCase().includes('level')
-    ))||groups[0];
-    const plan=await graphPost('planner/plans',{
-      owner:preferred.id,
-      title:'Journey Auto — Level 10 Tasks'
-    });
-    msPlanId=plan.id;
-    await loadBuckets();
-    console.log('Created new Level 10 plan in group:',preferred.displayName);
-  }catch(e){
-    console.warn('Could not create plan:',e);
-    showPlannerSetupNotice();
-  }
+    const g=await gGet('me/memberOf','?$select=id,displayName');
+    const groups=(g.value||[]).filter(x=>x['@odata.type']==='#microsoft.graph.group');
+    if(!groups.length)return;
+    const pref=groups.find(x=>x.displayName&&(x.displayName.toLowerCase().includes('corporate')||x.displayName.toLowerCase().includes('journey')))||groups[0];
+    const p=await gPost('planner/plans',{owner:pref.id,title:'Journey Auto — Level 10 Tasks'});
+    msPlanId=p.id;await loadBuckets();
+  }catch(e){console.warn('createPlan:',e);}
 }
-
-function showPlannerSetupNotice(){
-  const bar=document.getElementById('auth-bar');
-  if(bar){
-    bar.className='auth-bar pending';
-    bar.innerHTML=`<div style="display:flex;align-items:center;gap:8px"><i class="ti ti-alert-triangle" style="font-size:16px"></i><span>Connected to Microsoft 365 but could not find or create a Planner plan. Tasks will save locally only. <a href="https://tasks.office.com" target="_blank" style="color:inherit;font-weight:700;">Open Planner</a> to create a plan manually.</span></div>`;
-  }
-}
-
-let msAllPlans=[];
 async function loadBuckets(){
   if(!msPlanId)return;
-  try{const r=await graphGet(`planner/plans/${msPlanId}/buckets`);msBuckets={};(r.value||[]).forEach(b=>{msBuckets[b.name]=b.id;});}catch(e){}
+  try{const r=await gGet(`planner/plans/${msPlanId}/buckets`);msBuckets={};(r.value||[]).forEach(b=>{msBuckets[b.name]=b.id;});}catch(e){}
 }
 async function ensureBucket(name){
   if(msBuckets[name])return msBuckets[name];
   if(!msPlanId)return null;
-  try{const b=await graphPost('planner/buckets',{name,planId:msPlanId,orderHint:' !'});msBuckets[name]=b.id;return b.id;}catch(e){return null;}
+  try{const b=await gPost('planner/buckets',{name,planId:msPlanId,orderHint:' !'});msBuckets[name]=b.id;return b.id;}catch(e){return null;}
 }
 async function createPlannerTask(todo){
   if(!msToken)return;
-  if(!msPlanId){await loadPlans();if(!msPlanId){console.warn('No Planner plan available');return;}}
+  if(!msPlanId){await loadPlans();if(!msPlanId)return;}
   try{
-    const bucketId=await ensureBucket('This Week');
-    const ownerLower=(todo.owner||'').toLowerCase();
-    const assignee=msMembers.find(m=>
-      m.displayName===todo.owner||
-      (m.mail&&m.mail.split('@')[0]===todo.owner)||
-      m.displayName?.toLowerCase()===ownerLower||
-      m.displayName?.toLowerCase().startsWith(ownerLower)
-    );
+    const bid=await ensureBucket('This Week');
+    const ol=todo.owner.toLowerCase();
+    const assignee=msMembers.find(m=>m.displayName===todo.owner||(m.mail&&m.mail.split('@')[0]===todo.owner)||m.displayName?.toLowerCase()===ol||m.displayName?.toLowerCase().startsWith(ol));
     const assignments={};
     if(assignee)assignments[assignee.id]={'@odata.type':'#microsoft.graph.plannerAssignment',orderHint:' !'};
-    else console.warn('Assignee not found:',todo.owner);
-    let dueDateTime=null;
-    try{const dd=new Date(todo.due+', '+new Date().getFullYear());if(!isNaN(dd.getTime()))dueDateTime=dd.toISOString();}catch(e){}
-    const task=await graphPost('planner/tasks',{
-      planId:msPlanId,bucketId:bucketId||undefined,
-      title:todo.task,assignments,dueDateTime
-    });
-    todo.plannerId=task.id;todo.plannerSynced=true;todo.plannerPlan=msPlanId;
-    save();render();
+    let due=null;try{const d=new Date(todo.due+', '+new Date().getFullYear());if(!isNaN(d.getTime()))due=d.toISOString();}catch(e){}
+    const task=await gPost('planner/tasks',{planId:msPlanId,bucketId:bid||undefined,title:todo.task,assignments,dueDateTime:due});
+    todo.plannerId=task.id;todo.plannerSynced=true;save();render();
     console.log('Planner task created:',todo.task);
-  }catch(e){
-    console.warn('Planner sync error:',e);
-    const bar=document.getElementById('auth-bar');
-    if(bar){
-      const orig=bar.innerHTML,origClass=bar.className;
-      bar.className='auth-bar error';
-      bar.innerHTML='<span>⚠️ Planner sync failed — task saved locally only. Check you have a Planner plan created.</span>';
-      setTimeout(()=>{bar.className=origClass;bar.innerHTML=orig;},5000);
-    }
-  }
+  }catch(e){console.warn('createPlannerTask:',e);}
 }
-async function completePlannerTask(taskId){
-  if(!msToken||!taskId)return;
-  try{const t=await graphGet(`planner/tasks/${taskId}`);await graphPatch(`planner/tasks/${taskId}`,{percentComplete:100},t['@odata.etag']);}catch(e){}
+async function completePlannerTask(id){
+  if(!msToken||!id)return;
+  try{const t=await gGet(`planner/tasks/${id}`);await gPatch(`planner/tasks/${id}`,{percentComplete:100},t['@odata.etag']);}catch(e){}
 }
 
-function updateAuthBar(state,msg){
-  const bar=document.getElementById('auth-bar');
-  const txt=document.getElementById('auth-status-text');
-  const btn=document.getElementById('auth-btn');
-  if(!bar)return;
-  bar.className='auth-bar ';
-  if(state==='connected'||(!state&&msToken&&msUser)){
-    bar.className='auth-bar connected';
-    const planName=msPlanId?'Planner connected ✅':'Planner not found ⚠️';
-    txt.innerHTML=`Connected as <strong>${msUser.displayName||msUser.mail}</strong> — ${planName}`;
-    btn.className='auth-btn sign-out';btn.textContent='Sign out';
-  } else if(state==='pending'){
-    bar.className='auth-bar pending';txt.textContent=msg||'Connecting...';btn.style.display='none';
-  } else if(state==='error'){
-    bar.className='auth-bar error';txt.textContent=msg;btn.style.display='';btn.className='auth-btn sign-in';btn.textContent='Retry';
-  } else {
-    bar.className='auth-bar pending';
-    txt.textContent='Sign in to connect Microsoft 365 — tasks sync to Planner & To Do automatically';
-    btn.style.display='';btn.className='auth-btn sign-in';btn.textContent='Sign in with Microsoft';
-  }
-}
-
-// Auth redirect handled in startup() below
-
-// ── HELPERS ─────────────────────────────────────────────────────────────────
-function getStatus(val,goal){
-  if(val===''||val===null||val===undefined)return 'gray';
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function status(val,goal){
+  if(val===''||val===null||val===undefined)return 'x';
   const v=parseFloat(val),g=parseFloat(goal);
-  if(isNaN(v)||isNaN(g))return 'gray';
-  const p=v/g;if(p>=1)return 'green';if(p>=0.75)return 'amber';return 'red';
+  if(isNaN(v)||isNaN(g))return 'x';
+  const p=v/g;return p>=1?'g':p>=.75?'a':'r';
 }
-function statusBadge(val,goal){
-  const s=getStatus(val,goal);
-  const ic={green:'ti-check',red:'ti-x',amber:'ti-minus',gray:'ti-minus'};
-  return `<span class="badge b-${s}"><i class="ti ${ic[s]}" style="font-size:9px"></i></span>`;
+function sbadge(val,goal){
+  const s=status(val,goal),ic={g:'ti-check',r:'ti-x',a:'ti-minus',x:'ti-minus'},cl={g:'bg',r:'br',a:'ba',x:'bx'};
+  return `<span class="bdg ${cl[s]}"><i class="ti ${ic[s]}" style="font-size:9px"></i></span>`;
 }
-function memberSelectField(selected='',fieldId='f2'){
-  if(!msMembers.length)return `<div class="field"><label>Assign to</label><input id="${fieldId}" placeholder="e.g. Andy" value="${selected}" /></div>`;
-  const opts=msMembers.map(m=>`<option value="${m.displayName}" ${m.displayName===selected?'selected':''}>${m.displayName}</option>`).join('');
-  return `<div class="field"><label>Assign to</label><select id="${fieldId}">${opts}</select></div>`;
+function memberSelect(sel,fid){
+  if(!msMembers.length)return `<div class="fld"><label>Assign to</label><input id="${fid}" placeholder="e.g. Andy" value="${sel}"/></div>`;
+  const opts=msMembers.map(m=>`<option value="${m.displayName}" ${m.displayName===sel?'selected':''}>${m.displayName}</option>`).join('');
+  return `<div class="fld"><label>Assign to</label><select id="${fid}">${opts}</select></div>`;
 }
 
-// ── RENDER ENGINE ────────────────────────────────────────────────────────────
-function renderSummary(){
-  document.getElementById('cur-week-label').textContent=curWeek();
-  const wk=curWeek(),allSC=Object.values(D.scorecard).flat();
-  const scOn=allSC.filter(r=>getStatus(r.values[wk],r.goal)==='green').length;
-  const openTodos=D.todos.filter(t=>t.status==='open').length;
-  const openIds=D.ids.filter(i=>i.status==='open').length;
-  const rocksOn=D.rocks.filter(r=>r.status==='on').length;
-  document.getElementById('summary-grid').innerHTML=`
-    <div class="sum-card"><div class="sum-label">Scorecard on track</div><div class="sum-val ${scOn===allSC.length&&allSC.length>0?'c-green':'c-amber'}">${scOn}/${allSC.length}</div><div class="sum-sub">metrics this week</div></div>
-    <div class="sum-card"><div class="sum-label">Rocks on track</div><div class="sum-val ${rocksOn===D.rocks.length&&D.rocks.length>0?'c-green':'c-amber'}">${rocksOn}/${D.rocks.length||0}</div><div class="sum-sub">quarterly rocks</div></div>
-    <div class="sum-card"><div class="sum-label">Open to-dos</div><div class="sum-val ${openTodos===0?'c-green':'c-amber'}">${openTodos}</div><div class="sum-sub">need completion</div></div>
-    <div class="sum-card"><div class="sum-label">Open issues</div><div class="sum-val ${openIds===0?'c-green':'c-red'}">${openIds}</div><div class="sum-sub">in IDS queue</div></div>`;
-}
-function switchSection(s,el){
-  activeSection=s;document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');render();
-}
+// ── RENDER ────────────────────────────────────────────────────────────────────
 function render(){
-  renderSummary();
-  const c=document.getElementById('section-content');
-  if(activeSection==='agenda')c.innerHTML=renderAgenda();
-  else if(activeSection==='headlines')c.innerHTML=renderHeadlines();
-  else if(activeSection==='scorecard')c.innerHTML=renderScorecard();
-  else if(activeSection==='rocks')c.innerHTML=renderRocks();
-  else if(activeSection==='todos')c.innerHTML=renderTodos();
-  else if(activeSection==='ids')c.innerHTML=renderIDS();
-  else if(activeSection==='conclude')c.innerHTML=renderConclude();
+  // Summary
+  const wk=curWeek();
+  const el=document.getElementById('wk-label');if(el)el.textContent=wk;
+  const allSC=Object.values(D.scorecard).flat();
+  const scOn=allSC.filter(r=>status(r.values[wk],r.goal)==='g').length;
+  const openT=D.todos.filter(t=>t.status==='open').length;
+  const openI=D.ids.filter(i=>i.status==='open').length;
+  const rOn=D.rocks.filter(r=>r.status==='on').length;
+  const sg=document.getElementById('sgrid');
+  if(sg)sg.innerHTML=`
+    <div class="scard"><div class="slbl">Scorecard on track</div><div class="sval ${scOn===allSC.length&&allSC.length>0?'cg':'ca'}">${scOn}/${allSC.length}</div><div class="ssub">metrics this week</div></div>
+    <div class="scard"><div class="slbl">Rocks on track</div><div class="sval ${rOn===D.rocks.length&&D.rocks.length>0?'cg':'ca'}">${rOn}/${D.rocks.length||0}</div><div class="ssub">quarterly rocks</div></div>
+    <div class="scard"><div class="slbl">Open to-dos</div><div class="sval ${openT===0?'cg':'ca'}">${openT}</div><div class="ssub">need completion</div></div>
+    <div class="scard"><div class="slbl">Open issues</div><div class="sval ${openI===0?'cg':'cr'}">${openI}</div><div class="ssub">in IDS queue</div></div>`;
+  // Nav
+  const nav=document.getElementById('mainnav');
+  if(nav)nav.innerHTML=ST.navTabs.map((t,i)=>`<div class="ntab ${activeSection===DEF_KEYS[i]?'active':''}" onclick="sw('${DEF_KEYS[i]}',this)"><i class="ti ${DEF_ICONS[i]}"></i>${t}</div>`).join('');
+  // Content
+  const c=document.getElementById('content');if(!c)return;
+  const map={agenda:rAgenda,headlines:rHeadlines,scorecard:rScorecard,rocks:rRocks,todos:rTodos,ids:rIDS,conclude:rConclude};
+  c.innerHTML=(map[activeSection]||rAgenda)();
 }
 
-// ── AGENDA ───────────────────────────────────────────────────────────────────
-function renderAgenda(){
-  const wk=curWeek(),done=D.agendaDone[wk]||{};
-  const rows=AGENDA_ITEMS.map((a,i)=>`
-    <div class="agenda-row">
-      <div class="agenda-num">${i+1}</div>
-      <div style="flex:1;font-size:13px;${done[i]?'text-decoration:line-through;color:var(--text2)':''}">${a.label}</div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:11px;color:var(--text2)">${a.minutes} min</span>
-        <input type="checkbox" ${done[i]?'checked':''} onchange="toggleAgenda(${i})" style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer" />
-      </div>
-    </div>`).join('');
-  return `<div class="card"><div class="card-hdr"><div class="card-hdr-left"><i class="ti ti-list-check"></i><div><div class="card-title">Meeting agenda</div><div class="card-sub">90 min total — check off each section</div></div></div><span class="timer-badge">90 min</span></div>${rows}</div>`;
+function sw(s,el){activeSection=s;document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');render();}
+
+// ── AGENDA ────────────────────────────────────────────────────────────────────
+function rAgenda(){
+  const wk=curWeek(),done=D.agDone[wk]||{},items=ST.agendaItems;
+  const rows=items.map((a,i)=>`<div class="arow"><div class="anum">${i+1}</div><div style="flex:1;font-size:13px;${done[i]?'text-decoration:line-through;color:var(--t2)':''}">${a.label}</div><div style="display:flex;align-items:center;gap:10px"><span style="font-size:11px;color:var(--t2)">${a.minutes} min</span><input type="checkbox" ${done[i]?'checked':''} onchange="togAg(${i})" style="width:16px;height:16px;accent-color:var(--o);cursor:pointer"/></div></div>`).join('');
+  const tot=items.reduce((s,a)=>s+a.minutes,0);
+  return `<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-list-check"></i><div><div class="ctitle">${ST.navTabs[0]}</div><div class="csub">${tot} min total</div></div></div><span class="tbadge">${tot} min</span></div>${rows}</div>`;
 }
-function toggleAgenda(i){const wk=curWeek();if(!D.agendaDone[wk])D.agendaDone[wk]={};D.agendaDone[wk][i]=!D.agendaDone[wk][i];save();render();}
+function togAg(i){const wk=curWeek();if(!D.agDone[wk])D.agDone[wk]={};D.agDone[wk][i]=!D.agDone[wk][i];save();render();}
 
 // ── HEADLINES ─────────────────────────────────────────────────────────────────
-function renderHeadlines(){
-  const rows=D.headlines.map((h,i)=>`
-    <div class="headline-row">
-      <div class="headline-person">${h.person}</div>
-      <input class="txt-full" value="${h.text||''}" placeholder="Type headline here..." onchange="updateHeadline(${i},this.value)" />
-    </div>`).join('');
-  return `<div class="card"><div class="card-hdr"><div class="card-hdr-left"><i class="ti ti-speakerphone"></i><div><div class="card-title">Headlines / check-in</div><div class="card-sub">Fill in before the meeting</div></div></div><span class="timer-badge">5 min</span></div>${rows}<button class="add-row" onclick="openModal('headline')"><i class="ti ti-plus"></i> Add person</button></div>`;
+function rHeadlines(){
+  const rows=D.headlines.map((h,i)=>`<div class="hlrow"><div class="hlp">${h.person}</div><input class="tf" value="${h.text||''}" placeholder="Type headline here..." onchange="updHL(${i},this.value)"/></div>`).join('');
+  return `<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-speakerphone"></i><div><div class="ctitle">${ST.navTabs[1]}</div><div class="csub">Fill in before the meeting</div></div></div><span class="tbadge">5 min</span></div>${rows}<button class="addbtn" onclick="openModal('hl')"><i class="ti ti-plus"></i> Add person</button></div>`;
 }
-function updateHeadline(i,v){D.headlines[i].text=v;save();}
+function updHL(i,v){D.headlines[i].text=v;save();}
 
 // ── SCORECARD ─────────────────────────────────────────────────────────────────
-function renderScorecard(){
-  const key=SC_KEYS[activeSCTab],rows=D.scorecard[key],vis=D.weeks.slice(-5);
+function rScorecard(){
+  const key=DEF_SC_KEYS[activeSCTab],rows=D.scorecard[key],vis=D.weeks.slice(-5);
   const thW=vis.map(w=>`<th style="text-align:center;min-width:70px">${w}</th>`).join('');
   let tbody='';
-  if(!rows.length)tbody=`<tr><td colspan="${4+vis.length}" style="padding:2rem;text-align:center;color:var(--text2)">No metrics yet — add one below</td></tr>`;
+  if(!rows.length)tbody=`<tr><td colspan="${4+vis.length}" style="padding:2rem;text-align:center;color:var(--t2)">No metrics yet</td></tr>`;
   else rows.forEach((r,ri)=>{
     const tds=vis.map((w,wi)=>{
       const isCur=wi===vis.length-1,val=r.values[w]!==undefined?r.values[w]:'';
-      if(isCur)return `<td style="text-align:center"><input class="num-input" style="width:62px" type="number" min="0" value="${val}" placeholder="—" onchange="updateSCVal('${key}',${ri},'${w}',this.value)" /></td>`;
-      return `<td style="text-align:center;color:var(--text2)">${val!==''?val:'—'}</td>`;
+      if(isCur)return `<td style="text-align:center"><input class="ni" style="width:62px" type="number" min="0" value="${val}" placeholder="—" onchange="updSC('${key}',${ri},'${w}',this.value)"/></td>`;
+      return `<td style="text-align:center;color:var(--t2)">${val!==''?val:'—'}</td>`;
     }).join('');
-    const curVal=r.values[vis[vis.length-1]]??'';
-    tbody+=`<tr>
-      <td style="width:24%"><input class="inline-edit" value="${r.metric}" onchange="updateSCField('${key}',${ri},'metric',this.value)" />${r.freq&&r.freq!=='Weekly'?`<div class="freq-note">${r.freq}</div>`:''}</td>
-      <td style="width:13%"><input class="inline-edit" value="${r.owner}" onchange="updateSCField('${key}',${ri},'owner',this.value)" /></td>
-      <td style="width:9%;text-align:center"><input class="inline-edit-num" type="number" min="0" value="${r.goal}" onchange="updateSCField('${key}',${ri},'goal',this.value)" /></td>
-      ${tds}
-      <td style="width:8%;text-align:center">${statusBadge(curVal,r.goal)}</td>
-      <td style="width:32px;text-align:center"><button class="row-btn" onclick="deleteSCRow('${key}',${ri})"><i class="ti ti-trash" style="font-size:12px"></i></button></td>
-    </tr>`;
+    const cv=r.values[vis[vis.length-1]]??'';
+    tbody+=`<tr><td style="width:24%"><input class="ie" value="${r.metric}" onchange="updSCF('${key}',${ri},'metric',this.value)"/>${r.freq&&r.freq!=='Weekly'?`<div class="fn">${r.freq}</div>`:''}</td><td style="width:13%"><input class="ie" value="${r.owner}" onchange="updSCF('${key}',${ri},'owner',this.value)"/></td><td style="width:9%;text-align:center"><input class="ien" type="number" min="0" value="${r.goal}" onchange="updSCF('${key}',${ri},'goal',this.value)"/></td>${tds}<td style="width:8%;text-align:center">${sbadge(cv,r.goal)}</td><td style="width:32px;text-align:center"><button class="rbtn" onclick="delSC('${key}',${ri})"><i class="ti ti-trash" style="font-size:12px"></i></button></td></tr>`;
   });
-  const scTabsHtml=SC_TABS.map((t,i)=>`<div class="sc-tab ${i===activeSCTab?'active':''}" onclick="switchSCTab(${i})">${t}</div>`).join('');
-  return `<div class="card">
-    <div class="card-hdr"><div class="card-hdr-left"><i class="ti ti-chart-bar"></i><div><div class="card-title">Weekly scorecard</div><div class="card-sub">Last 5 weeks shown — fill in before the meeting</div></div></div><span class="timer-badge">5 min</span></div>
-    <div class="sc-tabs">${scTabsHtml}</div>
-    <div class="tbl-wrap"><table><thead><tr><th style="width:24%">Metric</th><th style="width:13%">Owner</th><th style="width:9%;text-align:center">Goal</th>${thW}<th style="width:8%;text-align:center">Status</th><th style="width:32px"></th></tr></thead><tbody>${tbody}</tbody></table></div>
-    <div class="edit-hint"><i class="ti ti-pencil" style="color:var(--orange)"></i> Click any metric name, owner, or goal number to edit it directly</div>
-    <button class="add-row" onclick="openModal('scorecard')"><i class="ti ti-plus"></i> Add metric</button>
-  </div>`;
+  const tabs=ST.scTabs.map((t,i)=>`<div class="sctab ${i===activeSCTab?'active':''}" onclick="swSC(${i})">${t}</div>`).join('');
+  return `<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-chart-bar"></i><div><div class="ctitle">${ST.navTabs[2]}</div><div class="csub">Last 5 weeks — fill in before the meeting</div></div></div><span class="tbadge">5 min</span></div><div class="sctabs">${tabs}</div><div class="twrap"><table><thead><tr><th style="width:24%">Metric</th><th style="width:13%">Owner</th><th style="width:9%;text-align:center">Goal</th>${thW}<th style="width:8%;text-align:center">Status</th><th style="width:32px"></th></tr></thead><tbody>${tbody}</tbody></table></div><div class="ehint"><i class="ti ti-pencil" style="color:var(--o)"></i> Click any metric, owner, or goal to edit</div><button class="addbtn" onclick="openModal('sc')"><i class="ti ti-plus"></i> Add metric</button></div>`;
 }
-function switchSCTab(i){activeSCTab=i;render();}
-function updateSCVal(key,ri,wk,val){D.scorecard[key][ri].values[wk]=val;save();renderSummary();}
-function updateSCField(key,ri,field,val){D.scorecard[key][ri][field]=val;save();renderSummary();}
-function deleteSCRow(key,ri){if(confirm('Delete this metric?')){D.scorecard[key].splice(ri,1);save();render();}}
+function swSC(i){activeSCTab=i;render();}
+function updSC(k,ri,wk,v){D.scorecard[k][ri].values[wk]=v;save();render();}
+function updSCF(k,ri,f,v){D.scorecard[k][ri][f]=v;save();}
+function delSC(k,ri){if(confirm('Delete this metric?')){D.scorecard[k].splice(ri,1);save();render();}}
 
 // ── ROCKS ─────────────────────────────────────────────────────────────────────
-function renderRocks(){
+function rRocks(){
   let rows='';
-  if(!D.rocks.length)rows=`<div style="padding:2rem;text-align:center;color:var(--text2);font-size:13px">No rocks this quarter — add one below</div>`;
+  if(!D.rocks.length)rows=`<div style="padding:2rem;text-align:center;color:var(--t2);font-size:13px">No rocks this quarter</div>`;
   else D.rocks.forEach((r,i)=>{
-    const pl={on:'pill-on',off:'pill-off',risk:'pill-risk'},lb={on:'On track',off:'Off track',risk:'At risk'};
-    rows+=`<div class="check-wrap">
-      <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-          <span class="pill ${pl[r.status]||'pill-on'}">${lb[r.status]||'On track'}</span>
-          <input class="inline-edit" value="${r.rock}" style="font-weight:600;font-size:13px" onchange="updateRockField(${i},'rock',this.value)" />
-        </div>
-        <div style="font-size:11px;color:var(--text2);display:flex;gap:8px;flex-wrap:wrap">
-          Owner: <input class="inline-edit" value="${r.owner}" style="font-size:11px;width:100px" onchange="updateRockField(${i},'owner',this.value)" />
-          &nbsp;Due: <input class="inline-edit" value="${r.due}" style="font-size:11px;width:100px" onchange="updateRockField(${i},'due',this.value)" />
-        </div>
-      </div>
-      <select onchange="updateRockStatus(${i},this.value)"><option value="on" ${r.status==='on'?'selected':''}>On track</option><option value="risk" ${r.status==='risk'?'selected':''}>At risk</option><option value="off" ${r.status==='off'?'selected':''}>Off track</option></select>
-      <button class="row-btn" onclick="deleteRock(${i})"><i class="ti ti-trash" style="font-size:12px"></i></button>
-    </div>`;
+    const pl={on:'pon',off:'pof',risk:'pri'},lb={on:'On track',off:'Off track',risk:'At risk'};
+    rows+=`<div class="cw"><div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="pill ${pl[r.status]||'pon'}">${lb[r.status]||'On track'}</span><input class="ie" value="${r.rock}" style="font-weight:700;font-size:13px" onchange="updRF(${i},'rock',this.value)"/></div><div style="font-size:11px;color:var(--t2);display:flex;gap:8px;align-items:center">Owner:<input class="ie" value="${r.owner}" style="font-size:11px;width:110px" onchange="updRF(${i},'owner',this.value)"/>Due:<input class="ie" value="${r.due}" style="font-size:11px;width:100px" onchange="updRF(${i},'due',this.value)"/></div></div><select onchange="updRS(${i},this.value)"><option value="on" ${r.status==='on'?'selected':''}>On track</option><option value="risk" ${r.status==='risk'?'selected':''}>At risk</option><option value="off" ${r.status==='off'?'selected':''}>Off track</option></select><button class="rbtn" onclick="delR(${i})"><i class="ti ti-trash" style="font-size:12px"></i></button></div>`;
   });
-  return `<div class="card"><div class="card-hdr"><div class="card-hdr-left"><i class="ti ti-mountain"></i><div><div class="card-title">Quarterly rocks</div><div class="card-sub">90-day priorities</div></div></div><span class="timer-badge">5 min</span></div>${rows}<button class="add-row" onclick="openModal('rock')"><i class="ti ti-plus"></i> Add rock</button></div>`;
+  return `<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-mountain"></i><div><div class="ctitle">${ST.navTabs[3]}</div><div class="csub">90-day priorities</div></div></div><span class="tbadge">5 min</span></div>${rows}<button class="addbtn" onclick="openModal('rock')"><i class="ti ti-plus"></i> Add rock</button></div>`;
 }
-function updateRockField(i,f,v){D.rocks[i][f]=v;save();}
-function updateRockStatus(i,v){D.rocks[i].status=v;save();renderSummary();}
-function deleteRock(i){if(confirm('Delete this rock?')){D.rocks.splice(i,1);save();render();}}
+function updRF(i,f,v){D.rocks[i][f]=v;save();}
+function updRS(i,v){D.rocks[i].status=v;save();render();}
+function delR(i){if(confirm('Delete this rock?')){D.rocks.splice(i,1);save();render();}}
 
 // ── TO-DOS ────────────────────────────────────────────────────────────────────
-function renderTodos(){
+function rTodos(){
   const open=D.todos.filter(t=>t.status==='open'),done=D.todos.filter(t=>t.status==='done'),carry=D.todos.filter(t=>t.status==='carry');
-  function todoRow(t){
-    const idx=D.todos.indexOf(t);
-    return `<div class="check-wrap">
-      <input type="checkbox" ${t.status==='done'?'checked':''} onchange="toggleTodo(${idx})" style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0;margin-top:2px" />
-      <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:6px">
-          <input class="inline-edit" value="${t.task}" style="${t.status==='done'?'text-decoration:line-through;color:var(--text2)':''}" onchange="updateTodoField(${idx},'task',this.value)" />
-          ${t.plannerSynced?`<span class="planner-tag">✓ Planner</span>`:''}
-        </div>
-        <div style="display:flex;gap:6px;align-items:center;margin-top:3px;flex-wrap:wrap">
-          <span style="font-size:11px;color:var(--text2)">Owner:</span><input class="inline-edit" value="${t.owner}" style="font-size:11px;color:var(--text2);width:100px" onchange="updateTodoField(${idx},'owner',this.value)" />
-          <span style="font-size:11px;color:var(--text2)">Due:</span><input class="inline-edit" value="${t.due}" style="font-size:11px;color:var(--text2);width:80px" onchange="updateTodoField(${idx},'due',this.value)" />
-        </div>
-      </div>
-      <select onchange="updateTodoStatus(${idx},this.value)">
-        <option value="open" ${t.status==='open'?'selected':''}>Open</option>
-        <option value="done" ${t.status==='done'?'selected':''}>Done</option>
-        <option value="carry" ${t.status==='carry'?'selected':''}>Carry over</option>
-        <option value="dropped" ${t.status==='dropped'?'selected':''}>Dropped</option>
-      </select>
-      <button class="row-btn" onclick="deleteTodo(${idx})"><i class="ti ti-trash" style="font-size:12px"></i></button>
-    </div>`;
+  function tr(t){
+    const i=D.todos.indexOf(t);
+    return `<div class="cw"><input type="checkbox" ${t.status==='done'?'checked':''} onchange="togT(${i})" style="width:16px;height:16px;accent-color:var(--o);cursor:pointer;flex-shrink:0;margin-top:2px"/><div style="flex:1"><div style="display:flex;align-items:center;gap:6px"><input class="ie" value="${t.task}" style="${t.status==='done'?'text-decoration:line-through;color:var(--t2)':''}" onchange="updTF(${i},'task',this.value)"/>${t.plannerSynced?'<span class="ptag">✓ Planner</span>':''}</div><div style="display:flex;gap:6px;align-items:center;margin-top:3px;flex-wrap:wrap"><span style="font-size:11px;color:var(--t2)">Owner:</span><input class="ie" value="${t.owner}" style="font-size:11px;color:var(--t2);width:110px" onchange="updTF(${i},'owner',this.value)"/><span style="font-size:11px;color:var(--t2)">Due:</span><input class="ie" value="${t.due}" style="font-size:11px;color:var(--t2);width:80px" onchange="updTF(${i},'due',this.value)"/></div></div><select onchange="updTS(${i},this.value)"><option value="open" ${t.status==='open'?'selected':''}>Open</option><option value="done" ${t.status==='done'?'selected':''}>Done</option><option value="carry" ${t.status==='carry'?'selected':''}>Carry over</option><option value="dropped" ${t.status==='dropped'?'selected':''}>Dropped</option></select><button class="rbtn" onclick="delT(${i})"><i class="ti ti-trash" style="font-size:12px"></i></button></div>`;
   }
-  const syncNote=msToken&&msPlanId
-    ?`<div class="notice green"><i class="ti ti-brand-microsoft"></i> New to-dos automatically create tasks in Microsoft Planner and appear in each person's To Do app</div>`
-    :`<div class="notice amber"><i class="ti ti-brand-microsoft"></i> Sign in with Microsoft to auto-sync tasks to Planner & To Do</div>`;
-  let html=`<div class="card"><div class="card-hdr"><div class="card-hdr-left"><i class="ti ti-checkbox"></i><div><div class="card-title">To-do list</div><div class="card-sub">${open.length} open · ${done.length} done · ${carry.length} carried over</div></div></div><span class="timer-badge">5 min</span></div>${syncNote}`;
-  if(!D.todos.length)html+=`<div style="padding:2rem;text-align:center;color:var(--text2);font-size:13px">No to-dos yet — add one below</div>`;
-  else{
-    if(open.length)html+=open.map(todoRow).join('');
-    if(carry.length)html+=`<div style="padding:5px 15px;font-size:11px;color:var(--text2);background:var(--bg2);border-top:1px solid var(--border)">Carried over</div>`+carry.map(todoRow).join('');
-    if(done.length)html+=`<div style="padding:5px 15px;font-size:11px;color:var(--text2);background:var(--bg2);border-top:1px solid var(--border)">Completed</div>`+done.map(todoRow).join('');
-  }
-  html+=`<button class="add-row" onclick="openModal('todo')"><i class="ti ti-plus"></i> Add to-do</button></div>`;
-  return html;
+  const note=msToken&&msPlanId?`<div class="notice gn"><i class="ti ti-brand-microsoft"></i> New to-dos sync to Microsoft Planner & To Do automatically</div>`:`<div class="notice am"><i class="ti ti-brand-microsoft"></i> Sign in to auto-sync tasks to Planner & To Do</div>`;
+  let h=`<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-checkbox"></i><div><div class="ctitle">${ST.navTabs[4]}</div><div class="csub">${open.length} open · ${done.length} done · ${carry.length} carried over</div></div></div><span class="tbadge">5 min</span></div>${note}`;
+  if(!D.todos.length)h+=`<div style="padding:2rem;text-align:center;color:var(--t2);font-size:13px">No to-dos yet</div>`;
+  else{if(open.length)h+=open.map(tr).join('');if(carry.length)h+=`<div style="padding:5px 15px;font-size:11px;color:var(--t2);background:var(--bg2);border-top:1px solid var(--bd)">Carried over</div>`+carry.map(tr).join('');if(done.length)h+=`<div style="padding:5px 15px;font-size:11px;color:var(--t2);background:var(--bg2);border-top:1px solid var(--bd)">Completed</div>`+done.map(tr).join('');}
+  h+=`<button class="addbtn" onclick="openModal('todo')"><i class="ti ti-plus"></i> Add to-do</button></div>`;
+  return h;
 }
-function toggleTodo(i){
-  D.todos[i].status=D.todos[i].status==='done'?'open':'done';
-  if(D.todos[i].status==='done'&&D.todos[i].plannerId)completePlannerTask(D.todos[i].plannerId);
-  save();render();
-}
-function updateTodoField(i,f,v){D.todos[i][f]=v;save();}
-function updateTodoStatus(i,v){D.todos[i].status=v;save();render();}
-function deleteTodo(i){if(confirm('Delete this to-do?')){D.todos.splice(i,1);save();render();}}
+function togT(i){D.todos[i].status=D.todos[i].status==='done'?'open':'done';if(D.todos[i].status==='done'&&D.todos[i].plannerId)completePlannerTask(D.todos[i].plannerId);save();render();}
+function updTF(i,f,v){D.todos[i][f]=v;save();}
+function updTS(i,v){D.todos[i].status=v;save();render();}
+function delT(i){if(confirm('Delete this to-do?')){D.todos.splice(i,1);save();render();}}
 
 // ── IDS ───────────────────────────────────────────────────────────────────────
-function renderIDS(){
+function rIDS(){
   const open=D.ids.filter(x=>x.status==='open'),solved=D.ids.filter(x=>x.status==='solved');
-  const pr={high:'ids-high',med:'ids-med',low:'ids-low'};
-  function idsRow(x){
-    const idx=D.ids.indexOf(x);
-    return `<div class="check-wrap">
-      <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
-          <span class="ids-priority ${pr[x.priority]||'ids-med'}">${x.priority||'med'}</span>
-          <input class="inline-edit" value="${x.issue}" style="font-weight:600;font-size:13px" onchange="updateIDSField(${idx},'issue',this.value)" />
-        </div>
-        ${x.notes?`<div style="font-size:11px;color:var(--text2);margin-bottom:3px">${x.notes}</div>`:''}
-        <div style="font-size:11px;color:var(--text2);display:flex;gap:6px;align-items:center">
-          Raised by: <input class="inline-edit" value="${x.raisedBy}" style="font-size:11px;color:var(--text2);width:100px" onchange="updateIDSField(${idx},'raisedBy',this.value)" />
-        </div>
-      </div>
-      <select onchange="updateIDSStatus(${idx},this.value)">
-        <option value="open" ${x.status==='open'?'selected':''}>Open</option>
-        <option value="solved" ${x.status==='solved'?'selected':''}>Solved</option>
-        <option value="todo">Move to to-do</option>
-      </select>
-      <button class="row-btn" onclick="deleteIDS(${idx})"><i class="ti ti-trash" style="font-size:12px"></i></button>
-    </div>`;
+  const pc={high:'hi',med:'me',low:'lo'};
+  function ir(x){
+    const i=D.ids.indexOf(x);
+    return `<div class="cw"><div style="flex:1"><div style="display:flex;align-items:center;gap:7px;margin-bottom:4px"><span class="iph ${pc[x.priority]||'me'}">${x.priority||'med'}</span><input class="ie" value="${x.issue}" style="font-weight:700;font-size:13px" onchange="updIF(${i},'issue',this.value)"/></div>${x.notes?`<div style="font-size:11px;color:var(--t2);margin-bottom:3px">${x.notes}</div>`:''}<div style="font-size:11px;color:var(--t2);display:flex;gap:6px;align-items:center">Raised by:<input class="ie" value="${x.raisedBy}" style="font-size:11px;color:var(--t2);width:110px" onchange="updIF(${i},'raisedBy',this.value)"/></div></div><select onchange="updIS(${i},this.value)"><option value="open" ${x.status==='open'?'selected':''}>Open</option><option value="solved" ${x.status==='solved'?'selected':''}>Solved</option><option value="todo">Move to to-do</option></select><button class="rbtn" onclick="delI(${i})"><i class="ti ti-trash" style="font-size:12px"></i></button></div>`;
   }
-  let html=`<div class="card"><div class="card-hdr"><div class="card-hdr-left"><i class="ti ti-flame"></i><div><div class="card-title">IDS — Identify, Discuss, Solve</div><div class="card-sub">${open.length} open issue${open.length!==1?'s':''}</div></div></div><span class="timer-badge">60 min</span></div>`;
-  if(!D.ids.length)html+=`<div style="padding:2rem;text-align:center;color:var(--text2);font-size:13px">No issues this week — great meeting!</div>`;
-  else{
-    if(open.length)html+=open.map(idsRow).join('');
-    if(solved.length)html+=`<div style="padding:5px 15px;font-size:11px;color:var(--text2);background:var(--bg2);border-top:1px solid var(--border)">Solved this meeting</div>`+solved.map(idsRow).join('');
-  }
-  html+=`<button class="add-row" onclick="openModal('ids')"><i class="ti ti-plus"></i> Add issue</button></div>`;
-  return html;
+  let h=`<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-flame"></i><div><div class="ctitle">${ST.navTabs[5]}</div><div class="csub">${open.length} open issue${open.length!==1?'s':''}</div></div></div><span class="tbadge">60 min</span></div>`;
+  if(!D.ids.length)h+=`<div style="padding:2rem;text-align:center;color:var(--t2);font-size:13px">No issues this week!</div>`;
+  else{if(open.length)h+=open.map(ir).join('');if(solved.length)h+=`<div style="padding:5px 15px;font-size:11px;color:var(--t2);background:var(--bg2);border-top:1px solid var(--bd)">Solved</div>`+solved.map(ir).join('');}
+  h+=`<button class="addbtn" onclick="openModal('ids')"><i class="ti ti-plus"></i> Add issue</button></div>`;
+  return h;
 }
-function updateIDSField(i,f,v){D.ids[i][f]=v;save();}
-function updateIDSStatus(i,v){
-  if(v==='todo'){
-    const t={id:Date.now(),task:D.ids[i].issue,owner:D.ids[i].raisedBy,due:curWeek(),status:'open'};
-    D.todos.push(t);D.ids[i].status='solved';
-    if(msToken&&msPlanId)createPlannerTask(t);
-  } else D.ids[i].status=v;
+function updIF(i,f,v){D.ids[i][f]=v;save();}
+function updIS(i,v){
+  if(v==='todo'){const t={id:Date.now(),task:D.ids[i].issue,owner:D.ids[i].raisedBy,due:curWeek(),status:'open'};D.todos.push(t);D.ids[i].status='solved';if(msToken&&msPlanId)createPlannerTask(t);}
+  else D.ids[i].status=v;
   save();render();
 }
-function deleteIDS(i){if(confirm('Delete this issue?')){D.ids.splice(i,1);save();render();}}
+function delI(i){if(confirm('Delete this issue?')){D.ids.splice(i,1);save();render();}}
 
 // ── CONCLUDE ──────────────────────────────────────────────────────────────────
-function renderConclude(){
+function rConclude(){
   const wk=curWeek(),rating=D.ratings[wk]||0;
   const allR=Object.values(D.ratings),avg=allR.length?Math.round(allR.reduce((a,b)=>a+b,0)/allR.length*10)/10:0;
-  const ratingOptions=[1,1.5,2,2.5,3,3.5,4];const btns=ratingOptions.map(n=>`<button class="rating-btn ${rating===n?'selected':''}" onclick="setRating(${n})">${n}</button>`).join('');
-  return `<div class="card"><div class="card-hdr"><div class="card-hdr-left"><i class="ti ti-star"></i><div><div class="card-title">Conclude & rate the meeting</div><div class="card-sub">All-time avg: ${avg>0?avg+'/4':'No ratings yet'}</div></div></div><span class="timer-badge">5 min</span></div>
-    <div style="padding:16px">
-      <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Rate this meeting (1 = poor · 10 = excellent)</div>
-      <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px">${btns}</div>
-      ${rating?`<div style="font-size:13px;color:var(--text2)">This week: <strong style="color:${rating>=3.5?'var(--green)':rating>=2.5?'var(--amber)':'var(--red)'}">${rating}/10</strong></div>`:''}
-    </div>
-    <div style="padding:0 16px 16px">
-      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">Wrap-up checklist</div>
-      ${['All to-dos assigned with owners & due dates','All IDS issues resolved or moved to to-do','Scorecard updated by all owners','Next meeting date confirmed'].map(item=>`
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-          <input type="checkbox" style="width:15px;height:15px;accent-color:var(--orange);cursor:pointer;flex-shrink:0" />
-          <span style="font-size:13px">${item}</span>
-        </div>`).join('')}
-    </div>
+  const opts=[1,1.5,2,2.5,3,3.5,4];
+  const btns=opts.map(n=>`<button class="rtbtn ${rating===n?'sel':''}" onclick="setRating(${n})">${n}</button>`).join('');
+  return `<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-star"></i><div><div class="ctitle">${ST.navTabs[6]}</div><div class="csub">All-time avg: ${avg>0?avg+'/4':'No ratings yet'}</div></div></div><span class="tbadge">5 min</span></div>
+    <div style="padding:16px"><div style="font-size:13px;color:var(--t2);margin-bottom:12px">Rate this meeting (1 = poor · 4 = excellent)</div><div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px">${btns}</div>${rating?`<div style="font-size:13px;color:var(--t2)">This week: <strong style="color:${rating>=3.5?'var(--gr)':rating>=2.5?'var(--am)':'var(--re)'}">${rating}/4</strong></div>`:''}</div>
+    <div style="padding:0 16px 16px"><div style="font-size:13px;font-weight:700;color:var(--t);margin-bottom:10px">Wrap-up checklist</div>${['All to-dos assigned with owners & due dates','All IDS issues resolved or moved to to-do','Scorecard updated by all owners','Next meeting date confirmed'].map(item=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><input type="checkbox" style="width:15px;height:15px;accent-color:var(--o);cursor:pointer;flex-shrink:0"/><span style="font-size:13px">${item}</span></div>`).join('')}</div>
   </div>`;
 }
 function setRating(n){D.ratings[curWeek()]=n;save();render();}
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
 function openModal(type){
-  modalContext=type;
-  const titles={headline:'Add team member',scorecard:'Add scorecard metric',rock:'Add quarterly rock',todo:'Add to-do item',ids:'Add issue to IDS'};
-  document.getElementById('modal-title').textContent=titles[type]||'Add item';
-  let fields='';
-  if(type==='headline')fields=`<div class="field"><label>Person name</label><input id="f1" placeholder="e.g. Store Manager" /></div>`;
-  if(type==='scorecard')fields=`
-    <div class="field"><label>Metric name</label><input id="f1" placeholder="e.g. Oil changes completed" /></div>
-    <div class="field"><label>Owner</label><input id="f2" placeholder="e.g. Andy" /></div>
-    <div class="field"><label>Weekly goal</label><input id="f3" type="number" placeholder="e.g. 4" /></div>
-    <div class="field"><label>Frequency note (optional)</label><input id="f4" placeholder="e.g. 2-4/month" /></div>`;
-  if(type==='rock')fields=`
-    <div class="field"><label>Rock description</label><input id="f1" placeholder="e.g. Launch new training program" /></div>
-    <div class="field"><label>Owner</label><input id="f2" placeholder="e.g. Andy" /></div>
-    <div class="field"><label>Due date</label><input id="f3" placeholder="e.g. Sep 30, 2026" /></div>`;
-  if(type==='todo')fields=`
-    <div class="field"><label>Task</label><input id="f1" placeholder="e.g. Update employee handbook" /></div>
-    ${memberSelectField('','f2')}
-    <div class="field"><label>Due date</label><input id="f3" placeholder="e.g. Jun 30" /></div>
-    ${msToken&&msPlanId?`<div style="font-size:11px;color:var(--green);padding:4px 0;display:flex;align-items:center;gap:5px"><i class="ti ti-brand-microsoft"></i> Will automatically sync to Microsoft Planner & To Do</div>`:''}`;
-  if(type==='ids')fields=`
-    <div class="field"><label>Issue</label><input id="f1" placeholder="Describe the issue" /></div>
-    <div class="field"><label>Raised by</label><input id="f2" placeholder="e.g. Andy" /></div>
-    <div class="field"><label>Priority</label><select id="f3"><option value="high">High</option><option value="med" selected>Medium</option><option value="low">Low</option></select></div>
-    <div class="field"><label>Notes (optional)</label><textarea id="f4" placeholder="Additional context..."></textarea></div>`;
-  document.getElementById('modal-fields').innerHTML=fields;
-  document.getElementById('modal-bg').classList.add('open');
-  setTimeout(()=>{const f=document.getElementById('f1');if(f)f.focus();},50);
+  modalCtx=type;
+  const titles={hl:'Add team member',sc:'Add scorecard metric',rock:'Add quarterly rock',todo:'Add to-do item',ids:'Add issue to IDS'};
+  document.getElementById('mtitle').textContent=titles[type]||'Add item';
+  let f='';
+  if(type==='hl')f=`<div class="fld"><label>Person name</label><input id="f1" placeholder="e.g. Store Manager"/></div>`;
+  if(type==='sc')f=`<div class="fld"><label>Metric name</label><input id="f1" placeholder="e.g. Oil changes"/></div><div class="fld"><label>Owner</label><input id="f2" placeholder="e.g. Andy"/></div><div class="fld"><label>Weekly goal</label><input id="f3" type="number" placeholder="e.g. 4"/></div><div class="fld"><label>Frequency note (optional)</label><input id="f4" placeholder="e.g. 2-4/month"/></div>`;
+  if(type==='rock')f=`<div class="fld"><label>Rock description</label><input id="f1" placeholder="e.g. Launch training program"/></div><div class="fld"><label>Owner</label><input id="f2" placeholder="e.g. Andy"/></div><div class="fld"><label>Due date</label><input id="f3" placeholder="e.g. Sep 30, 2026"/></div>`;
+  if(type==='todo')f=`<div class="fld"><label>Task</label><input id="f1" placeholder="e.g. Update handbook"/></div>${memberSelect('','f2')}<div class="fld"><label>Due date</label><input id="f3" placeholder="e.g. Jun 30"/></div>${msToken&&msPlanId?`<div style="font-size:11px;color:var(--gr);padding:4px 0;display:flex;align-items:center;gap:5px"><i class="ti ti-brand-microsoft"></i> Will sync to Planner & To Do automatically</div>`:''}`;
+  if(type==='ids')f=`<div class="fld"><label>Issue</label><input id="f1" placeholder="Describe the issue"/></div><div class="fld"><label>Raised by</label><input id="f2" placeholder="e.g. Andy"/></div><div class="fld"><label>Priority</label><select id="f3"><option value="high">High</option><option value="med" selected>Medium</option><option value="low">Low</option></select></div><div class="fld"><label>Notes (optional)</label><textarea id="f4" placeholder="Additional context..."></textarea></div>`;
+  document.getElementById('mfields').innerHTML=f;
+  document.getElementById('modal').classList.add('open');
+  setTimeout(()=>{const el=document.getElementById('f1');if(el)el.focus();},50);
 }
-function closeModal(){document.getElementById('modal-bg').classList.remove('open');modalContext=null;}
-document.getElementById('modal-bg').addEventListener('click',e=>{if(e.target===document.getElementById('modal-bg'))closeModal();});
+function closeModal(){document.getElementById('modal').classList.remove('open');modalCtx=null;}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
 function saveModal(){
   const v=id=>{const el=document.getElementById(id);return el?el.value.trim():'';};
-  const type=modalContext;
-  if(type==='headline'&&v('f1'))D.headlines.push({id:Date.now(),person:v('f1'),text:''});
-  else if(type==='scorecard'&&v('f1')){const key=SC_KEYS[activeSCTab];D.scorecard[key].push({id:Date.now(),metric:v('f1'),owner:v('f2')||'—',goal:v('f3')||'1',freq:v('f4')||'Weekly',values:{}});}
-  else if(type==='rock'&&v('f1'))D.rocks.push({id:Date.now(),rock:v('f1'),owner:v('f2')||'—',due:v('f3')||'—',status:'on'});
-  else if(type==='todo'&&v('f1')){
-    const t={id:Date.now(),task:v('f1'),owner:v('f2')||'—',due:v('f3')||curWeek(),status:'open'};
-    D.todos.push(t);if(msToken&&msPlanId)createPlannerTask(t);
-  }
-  else if(type==='ids'&&v('f1'))D.ids.push({id:Date.now(),issue:v('f1'),raisedBy:v('f2')||'—',priority:v('f3')||'med',notes:v('f4')||'',status:'open'});
+  const t=modalCtx;
+  if(t==='hl'&&v('f1'))D.headlines.push({id:Date.now(),person:v('f1'),text:''});
+  else if(t==='sc'&&v('f1')){const k=DEF_SC_KEYS[activeSCTab];D.scorecard[k].push({id:Date.now(),metric:v('f1'),owner:v('f2')||'—',goal:v('f3')||'1',freq:v('f4')||'Weekly',values:{}});}
+  else if(t==='rock'&&v('f1'))D.rocks.push({id:Date.now(),rock:v('f1'),owner:v('f2')||'—',due:v('f3')||'—',status:'on'});
+  else if(t==='todo'&&v('f1')){const todo={id:Date.now(),task:v('f1'),owner:v('f2')||'—',due:v('f3')||curWeek(),status:'open'};D.todos.push(todo);if(msToken&&msPlanId)createPlannerTask(todo);}
+  else if(t==='ids'&&v('f1'))D.ids.push({id:Date.now(),issue:v('f1'),raisedBy:v('f2')||'—',priority:v('f3')||'med',notes:v('f4')||'',status:'open'});
   save();closeModal();render();
 }
-function addWeek(){
-  const next=getWeekLabel(D.weeks.length);
-  if(!D.weeks.includes(next)){D.weeks.push(next);D.currentWeekIndex=D.weeks.length-1;}
-  save();render();
-}
 
-
-// ── SETTINGS ────────────────────────────────────────────────────────────────
-const DEFAULT_NAV_TABS=['Agenda','Headlines','Scorecard','Rocks','To-Dos','IDS','Conclude'];
-const DEFAULT_SC_TABS=['Corporate Goals','New Hope','Andover','Individual'];
-const DEFAULT_AGENDA=[
-  {label:'Segue / check-in',minutes:5},{label:'Scorecard review',minutes:5},
-  {label:'Rock review',minutes:5},{label:'Customer / employee headlines',minutes:5},
-  {label:'To-do list review',minutes:5},{label:'IDS — Identify, Discuss, Solve',minutes:60},
-  {label:'Conclude & rate the meeting',minutes:5}
-];
-
-function loadSettings(){
-  try{const r=localStorage.getItem('journey_l10_settings');if(r)return JSON.parse(r);}catch(e){}
-  return {orgName:'Journey Auto Repair',meetingName:'Level 10 weekly meeting',
-    navTabs:[...DEFAULT_NAV_TABS],scTabs:[...DEFAULT_SC_TABS],
-    agendaItems:JSON.parse(JSON.stringify(DEFAULT_AGENDA))};
-}
-function saveSettingsStore(s){try{localStorage.setItem('journey_l10_settings',JSON.stringify(s));}catch(e){}}
-let SETTINGS=loadSettings();
-
-function applySettings(){
-  const el1=document.getElementById('display-org-name');
-  const el2=document.getElementById('display-meeting-name');
-  if(el1)el1.textContent=SETTINGS.orgName;
-  if(el2)el2.textContent=SETTINGS.meetingName;
-  document.title=SETTINGS.orgName+' — '+SETTINGS.meetingName;
-}
-
+// ── SETTINGS PANEL ────────────────────────────────────────────────────────────
 function openSettings(){
-  document.getElementById('s-org').value=SETTINGS.orgName;
-  document.getElementById('s-meeting').value=SETTINGS.meetingName;
-  SETTINGS.navTabs.forEach((t,i)=>{const el=document.getElementById('s-nav-'+i);if(el)el.value=t;});
-  SETTINGS.scTabs.forEach((t,i)=>{const el=document.getElementById('s-sc-'+i);if(el)el.value=t;});
-  const ar=document.getElementById('s-agenda-rows');
-  ar.innerHTML=SETTINGS.agendaItems.map((a,i)=>`
-    <div class="settings-row">
-      <label>Item ${i+1}</label>
-      <input id="s-ag-${i}" value="${a.label}" style="flex:1" />
-      <input id="s-ag-min-${i}" type="number" value="${a.minutes}" style="width:52px;flex:none" title="Minutes" />
-    </div>`).join('');
-  document.getElementById('settings-overlay').classList.add('open');
+  document.getElementById('s-org').value=ST.orgName;
+  document.getElementById('s-mtg').value=ST.meetingName;
+  ST.navTabs.forEach((t,i)=>{const el=document.getElementById('sn'+i);if(el)el.value=t;});
+  ST.scTabs.forEach((t,i)=>{const el=document.getElementById('ss'+i);if(el)el.value=t;});
+  document.getElementById('sagenda').innerHTML=ST.agendaItems.map((a,i)=>`<div class="srow"><label>Item ${i+1}</label><input id="sa${i}" value="${a.label}" style="flex:1"/><input id="sm${i}" type="number" value="${a.minutes}" style="width:52px;flex:none" title="Minutes"/></div>`).join('');
+  document.getElementById('soverlay').classList.add('open');
 }
-function closeSettings(){document.getElementById('settings-overlay').classList.remove('open');}
+function closeSettings(){document.getElementById('soverlay').classList.remove('open');}
+document.getElementById('soverlay').addEventListener('click',e=>{if(e.target===document.getElementById('soverlay'))closeSettings();});
 function saveSettings(){
-  SETTINGS.orgName=document.getElementById('s-org').value.trim()||SETTINGS.orgName;
-  SETTINGS.meetingName=document.getElementById('s-meeting').value.trim()||SETTINGS.meetingName;
-  SETTINGS.navTabs=SETTINGS.navTabs.map((_,i)=>{const el=document.getElementById('s-nav-'+i);return el&&el.value.trim()?el.value.trim():_;});
-  SETTINGS.scTabs=SETTINGS.scTabs.map((_,i)=>{const el=document.getElementById('s-sc-'+i);return el&&el.value.trim()?el.value.trim():_;});
-  SETTINGS.agendaItems=SETTINGS.agendaItems.map((a,i)=>{
-    const lbl=document.getElementById('s-ag-'+i),min=document.getElementById('s-ag-min-'+i);
-    return {label:lbl&&lbl.value.trim()?lbl.value.trim():a.label,minutes:min?parseInt(min.value)||a.minutes:a.minutes};
-  });
-  saveSettingsStore(SETTINGS);closeSettings();applySettings();render();
+  ST.orgName=document.getElementById('s-org').value.trim()||ST.orgName;
+  ST.meetingName=document.getElementById('s-mtg').value.trim()||ST.meetingName;
+  ST.navTabs=ST.navTabs.map((_,i)=>{const el=document.getElementById('sn'+i);return el&&el.value.trim()?el.value.trim():_;});
+  ST.scTabs=ST.scTabs.map((_,i)=>{const el=document.getElementById('ss'+i);return el&&el.value.trim()?el.value.trim():_;});
+  ST.agendaItems=ST.agendaItems.map((a,i)=>{const l=document.getElementById('sa'+i),m=document.getElementById('sm'+i);return{label:l&&l.value.trim()?l.value.trim():a.label,minutes:m?parseInt(m.value)||a.minutes:a.minutes};});
+  saveSettings2(ST);closeSettings();applySettings();render();
 }
-function resetSettings(){
-  if(!confirm('Reset all labels to defaults?'))return;
-  SETTINGS={orgName:'Journey Auto Repair',meetingName:'Level 10 weekly meeting',
-    navTabs:[...DEFAULT_NAV_TABS],scTabs:[...DEFAULT_SC_TABS],
-    agendaItems:JSON.parse(JSON.stringify(DEFAULT_AGENDA))};
-  saveSettingsStore(SETTINGS);closeSettings();applySettings();render();
+function resetSettings(){if(!confirm('Reset all labels to defaults?'))return;ST=defSettings();saveSettings2(ST);closeSettings();applySettings();render();}
+
+// ── STARTUP ───────────────────────────────────────────────────────────────────
+applySettings();
+render();
+// Handle auth redirect token in URL hash
+const _hash=location.hash;
+if(_hash&&_hash.includes('access_token')){
+  const _p=new URLSearchParams(_hash.substring(1));
+  msToken=_p.get('access_token');
+  history.replaceState(null,'',location.pathname+location.search);
+  onSignedIn();
 }
-document.getElementById('settings-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('settings-overlay'))closeSettings();});
-
-// ── PATCHED RENDERS USING SETTINGS ──────────────────────────────────────────
-const NAV_ICONS=['ti-list-check','ti-speakerphone','ti-chart-bar','ti-mountain','ti-checkbox','ti-flame','ti-star'];
-const NAV_KEYS=['agenda','headlines','scorecard','rocks','todos','ids','conclude'];
-
-const _origRender=render;
-function render(){
-  renderSummary();
-  // Render nav using SETTINGS
-  document.getElementById('main-nav').innerHTML=SETTINGS.navTabs.map((t,i)=>`
-    <div class="nav-tab ${activeSection===NAV_KEYS[i]?'active':''}" onclick="switchSection('${NAV_KEYS[i]}',this)">
-      <i class="ti ${NAV_ICONS[i]}"></i>${t}
-    </div>`).join('');
-  const c=document.getElementById('section-content');
-  if(activeSection==='agenda')c.innerHTML=renderAgenda();
-  else if(activeSection==='headlines')c.innerHTML=renderHeadlines();
-  else if(activeSection==='scorecard')c.innerHTML=renderScorecard();
-  else if(activeSection==='rocks')c.innerHTML=renderRocks();
-  else if(activeSection==='todos')c.innerHTML=renderTodos();
-  else if(activeSection==='ids')c.innerHTML=renderIDS();
-  else if(activeSection==='conclude')c.innerHTML=renderConclude();
-}
-
-// Patch scorecard sub-tabs to use SETTINGS.scTabs
-const _origRenderScorecard=renderScorecard;
-renderScorecard=function(){
-  const SC_KEYS_LOCAL=['corporate','newhope','andover','individual'];
-  const key=SC_KEYS_LOCAL[activeSCTab],rows=D.scorecard[key],vis=D.weeks.slice(-5);
-  const thW=vis.map(w=>`<th style="text-align:center;min-width:70px">${w}</th>`).join('');
-  let tbody='';
-  if(!rows.length)tbody=`<tr><td colspan="${4+vis.length}" style="padding:2rem;text-align:center;color:var(--text2)">No metrics yet — add one below</td></tr>`;
-  else rows.forEach((r,ri)=>{
-    const tds=vis.map((w,wi)=>{
-      const isCur=wi===vis.length-1,val=r.values[w]!==undefined?r.values[w]:'';
-      if(isCur)return `<td style="text-align:center"><input class="num-input" style="width:62px" type="number" min="0" value="${val}" placeholder="—" onchange="updateSCVal('${key}',${ri},'${w}',this.value)" /></td>`;
-      return `<td style="text-align:center;color:var(--text2)">${val!==''?val:'—'}</td>`;
-    }).join('');
-    const curVal=r.values[vis[vis.length-1]]??'';
-    tbody+=`<tr>
-      <td style="width:24%"><input class="inline-edit" value="${r.metric}" onchange="updateSCField('${key}',${ri},'metric',this.value)" />${r.freq&&r.freq!=='Weekly'?`<div class="freq-note">${r.freq}</div>`:''}</td>
-      <td style="width:13%"><input class="inline-edit" value="${r.owner}" onchange="updateSCField('${key}',${ri},'owner',this.value)" /></td>
-      <td style="width:9%;text-align:center"><input class="inline-edit-num" type="number" min="0" value="${r.goal}" onchange="updateSCField('${key}',${ri},'goal',this.value)" /></td>
-      ${tds}
-      <td style="width:8%;text-align:center">${statusBadge(curVal,r.goal)}</td>
-      <td style="width:32px;text-align:center"><button class="row-btn" onclick="deleteSCRow('${key}',${ri})"><i class="ti ti-trash" style="font-size:12px"></i></button></td>
-    </tr>`;
-  });
-  const scTabsHtml=SETTINGS.scTabs.map((t,i)=>`<div class="sc-tab ${i===activeSCTab?'active':''}" onclick="switchSCTab(${i})">${t}</div>`).join('');
-  return `<div class="card">
-    <div class="card-hdr"><div class="card-hdr-left"><i class="ti ti-chart-bar"></i><div><div class="card-title">${SETTINGS.navTabs[2]}</div><div class="card-sub">Last 5 weeks — fill in before the meeting</div></div></div><span class="timer-badge">5 min</span></div>
-    <div class="sc-tabs">${scTabsHtml}</div>
-    <div class="tbl-wrap"><table><thead><tr><th style="width:24%">Metric</th><th style="width:13%">Owner</th><th style="width:9%;text-align:center">Goal</th>${thW}<th style="width:8%;text-align:center">Status</th><th style="width:32px"></th></tr></thead><tbody>${tbody}</tbody></table></div>
-    <div class="edit-hint"><i class="ti ti-pencil" style="color:var(--orange)"></i> Click any metric name, owner, or goal to edit directly · Go to Settings to rename tabs</div>
-    <button class="add-row" onclick="openModal('scorecard')"><i class="ti ti-plus"></i> Add metric</button>
-  </div>`;
-};
-
-// Patch renderAgenda to use SETTINGS.agendaItems
-const _origAgenda=renderAgenda;
-renderAgenda=function(){
-  const wk=curWeek(),done=D.agendaDone[wk]||{},items=SETTINGS.agendaItems;
-  const rows=items.map((a,i)=>`
-    <div class="agenda-row">
-      <div class="agenda-num">${i+1}</div>
-      <div style="flex:1;font-size:13px;${done[i]?'text-decoration:line-through;color:var(--text2)':''}">${a.label}</div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:11px;color:var(--text2)">${a.minutes} min</span>
-        <input type="checkbox" ${done[i]?'checked':''} onchange="toggleAgenda(${i})" style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer" />
-      </div>
-    </div>`).join('');
-  const total=items.reduce((s,a)=>s+a.minutes,0);
-  return `<div class="card"><div class="card-hdr"><div class="card-hdr-left"><i class="ti ti-list-check"></i><div><div class="card-title">${SETTINGS.navTabs[0]}</div><div class="card-sub">${total} min total — check off each section</div></div></div><span class="timer-badge">${total} min</span></div>${rows}</div>`;
-};
-
-// ── STARTUP ─────────────────────────────────────────────────────────────────
-function startup(){
-  applySettings();
-  render(); // render immediately with local data
-  // Check for auth redirect token in URL hash
-  const hash=location.hash;
-  if(hash&&hash.includes('access_token')){
-    const p=new URLSearchParams(hash.substring(1));
-    msToken=p.get('access_token');
-    history.replaceState(null,'',location.pathname+location.search);
-    onSignedIn();
-  }
-}
-startup();
 </script>
 </body>
 </html>
