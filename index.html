@@ -532,7 +532,7 @@ function startSyncLoop(){
 const _localSave=save;
 function save(){
   _localSave();
-  if(msToken)pushSharedData();
+  if(msToken)pushSharedData().catch(e=>console.warn('push error:',e));
 }
 
 async function loadMembers(){
@@ -720,16 +720,7 @@ function updateAuthBar(state,msg){
   }
 }
 
-// Check for token on page load (redirect return)
-window.addEventListener('load',()=>{
-  const hash=location.hash;
-  if(hash&&hash.includes('access_token')){
-    const p=new URLSearchParams(hash.substring(1));
-    msToken=p.get('access_token');
-    history.replaceState(null,'',location.pathname+location.search);
-    onSignedIn();
-  }
-});
+// Auth redirect handled in startup() below
 
 // ── HELPERS ─────────────────────────────────────────────────────────────────
 function getStatus(val,goal){
@@ -1171,8 +1162,20 @@ renderAgenda=function(){
   return `<div class="card"><div class="card-hdr"><div class="card-hdr-left"><i class="ti ti-list-check"></i><div><div class="card-title">${SETTINGS.navTabs[0]}</div><div class="card-sub">${total} min total — check off each section</div></div></div><span class="timer-badge">${total} min</span></div>${rows}</div>`;
 };
 
-applySettings();
-render();
+// ── STARTUP ─────────────────────────────────────────────────────────────────
+function startup(){
+  applySettings();
+  render(); // render immediately with local data
+  // Check for auth redirect token in URL hash
+  const hash=location.hash;
+  if(hash&&hash.includes('access_token')){
+    const p=new URLSearchParams(hash.substring(1));
+    msToken=p.get('access_token');
+    history.replaceState(null,'',location.pathname+location.search);
+    onSignedIn();
+  }
+}
+startup();
 </script>
 </body>
 </html>
