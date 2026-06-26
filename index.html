@@ -427,7 +427,33 @@ async function graphPatch(path,body,etag){
 }
 
 async function loadMembers(){
-  try{const r=await graphGet('users','?$select=id,displayName,mail&$top=100');msMembers=r.value||[];}catch(e){msMembers=[];}
+  try{
+    // Pull only real enabled member accounts ordered by name
+    const r=await graphGet('users',
+      '?$select=id,displayName,mail,userType,accountEnabled'+
+      '&$filter=accountEnabled eq true and userType eq 'Member''+
+      '&$top=100&$orderby=displayName'
+    );
+    msMembers=(r.value||[]).filter(m=>
+      m.displayName&&m.mail&&
+      m.mail.includes('@')&&
+      !m.mail.includes('#EXT#')&&
+      !m.displayName.toLowerCase().includes('admin')&&
+      !m.displayName.toLowerCase().includes('service')&&
+      !m.displayName.toLowerCase().includes('sharepoint')&&
+      !m.displayName.toLowerCase().includes('noreply')
+    );
+    console.log('Org members loaded:',msMembers.map(m=>m.displayName));
+  }catch(e){
+    // Fallback — filter by your domain only
+    try{
+      const r=await graphGet('users','?$select=id,displayName,mail&$top=100&$orderby=displayName');
+      msMembers=(r.value||[]).filter(m=>
+        m.displayName&&m.mail&&
+        m.mail.toLowerCase().includes('@journeyautorepair.com')
+      );
+    }catch(e2){msMembers=[];}
+  }
 }
 async function loadPlans(){
   try{
