@@ -294,9 +294,18 @@
 // ── CONFIG ──────────────────────────────────────────────────────────────────
 const CLIENT_ID = '2e3191bd-33d5-4a17-bed6-120fe0476f6d';
 const TENANT_ID = '51d52d84-027d-48f3-8d09-628380cb4704';
-const SCOPES    = 'Tasks.ReadWrite Group.Read.All User.Read User.ReadBasic.All';
+const SCOPES    = 'Tasks.ReadWrite Group.Read.All User.Read User.ReadBasic.All Sites.ReadWrite.All';
 const REDIRECT_URI = location.href.split('?')[0].split('#')[0];
 const AUTH_URL  = `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/authorize`;
+
+// ── SHAREPOINT CONFIG ───────────────────────────────────────────────────────
+const SP_SITE = 'journeyautorepair.sharepoint.com';
+const SP_SITE_PATH = '/sites/Level10MeetingData';
+const SP_LIST = 'Level10AppData';
+const SP_ITEM_TITLE = 'SharedAppState';
+let spItemId = null; // ID of the SharePoint list item storing app data
+let syncInterval = null;
+let lastSyncHash = '';
 
 // ── AUTH STATE ──────────────────────────────────────────────────────────────
 let msToken = null, msUser = null, msMembers = [], msPlanId = null, msBuckets = {};
@@ -401,9 +410,16 @@ async function onSignedIn(){
     msUser=await graphGet('me');
     await loadMembers();
     await loadPlans();
+    // Load shared data from SharePoint — replaces local data with org-wide shared state
+    updateAuthBar('pending','Loading shared meeting data...');
+    await loadSharedData();
+    startSyncLoop();
     updateAuthBar('connected');
     render();
-  }catch(e){updateAuthBar('error','Connection failed — check app permissions in Azure');}
+  }catch(e){
+    console.warn('onSignedIn error:',e);
+    updateAuthBar('error','Connection failed — check app permissions in Azure');
+  }
 }
 
 async function graphGet(path,qs=''){
@@ -424,6 +440,99 @@ async function graphPatch(path,body,etag){
   const r=await fetch(`https://graph.microsoft.com/v1.0/${path}`,{method:'PATCH',headers:h,body:JSON.stringify(body)});
   if(!r.ok)throw new Error(r.status);
   return r.status===204?null:r.json();
+}
+
+// ── SHAREPOINT DATA SYNC ────────────────────────────────────────────────────
+async function spGet(path){
+  const r=await fetch(`https://graph.microsoft.com/v1.0/sites/${SP_SITE}:${SP_SITE_PATH}:${path}`,{
+    headers:{Authorization:`Bearer ${msToken}`,'Accept':'application/json'}
+  });
+  if(!r.ok)throw new Error('SP GET '+r.status);
+  return r.json();
+}
+async function spPost(path,body){
+  const r=await fetch(`https://graph.microsoft.com/v1.0/sites/${SP_SITE}:${SP_SITE_PATH}:${path}`,{
+    method:'POST',
+    headers:{Authorization:`Bearer ${msToken}`,'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  if(!r.ok)throw new Error('SP POST '+r.status);
+  return r.json();
+}
+async function spPatch(path,body){
+  const r=await fetch(`https://graph.microsoft.com/v1.0/sites/${SP_SITE}:${SP_SITE_PATH}:${path}`,{
+    method:'PATCH',
+    headers:{Authorization:`Bearer ${msToken}`,'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  if(!r.ok)throw new Error('SP PATCH '+r.status);
+  return r.status===204?null:r.json();
+}
+
+async function loadSharedData(){
+  try{
+    // Find existing item
+    const res=await spGet(`/lists/${SP_LIST}/items?$filter=fields/Title eq '${SP_ITEM_TITLE}'&$expand=fields&$top=1`);
+    const items=res.value||[];
+    if(items.length>0){
+      spItemId=items[0].id;
+      const json=items[0].fields?.JsonData;
+      if(json){
+        const remote=JSON.parse(json);
+        const remoteHash=JSON.stringify(remote);
+        if(remoteHash!==lastSyncHash){
+          // Merge remote data — preserve local settings if newer
+          const localSettings=D.settings;
+          D=remote;
+          if(!D.settings)D.settings=localSettings;
+          lastSyncHash=remoteHash;
+          save(); // also keep local copy
+          render();
+          console.log('Loaded shared data from SharePoint');
+        }
+      }
+    } else {
+      // No item yet — create one with current data
+      await pushSharedData();
+    }
+  }catch(e){console.warn('loadSharedData error:',e);}
+}
+
+async function pushSharedData(){
+  try{
+    const json=JSON.stringify(D);
+    const hash=json;
+    if(hash===lastSyncHash)return; // no change
+    lastSyncHash=hash;
+    if(spItemId){
+      // Update existing item
+      await spPatch(`/lists/${SP_LIST}/items/${spItemId}/fields`,{
+        JsonData:json
+      });
+    } else {
+      // Create new item
+      const res=await spPost(`/lists/${SP_LIST}/items`,{
+        fields:{Title:SP_ITEM_TITLE,JsonData:json}
+      });
+      spItemId=res.id;
+    }
+    console.log('Pushed shared data to SharePoint');
+  }catch(e){console.warn('pushSharedData error:',e);}
+}
+
+function startSyncLoop(){
+  // Pull fresh data from SharePoint every 15 seconds
+  if(syncInterval)clearInterval(syncInterval);
+  syncInterval=setInterval(async()=>{
+    if(msToken)await loadSharedData();
+  },15000);
+}
+
+// Override save() to also push to SharePoint
+const _localSave=save;
+function save(){
+  _localSave();
+  if(msToken)pushSharedData();
 }
 
 async function loadMembers(){
