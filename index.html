@@ -258,7 +258,7 @@ function applySettings(){
 
 // ── DATA ─────────────────────────────────────────────────────────────────────
 function defData(){return{
-  weeks:[wkLabel(0)],wkIdx:0,agDone:{},
+  weeks:[wkLabel(0)],wkIdx:0,agDone:{},settings:null,
   headlines:[{id:1,person:'Andy',text:''},{id:2,person:'Devan',text:''},{id:3,person:'Najla',text:''},{id:4,person:'New Hope Manager',text:''},{id:5,person:'Andover Manager',text:''}],
   scorecard:{corporate:JSON.parse(JSON.stringify(DEF_CORP)),newhope:JSON.parse(JSON.stringify(DEF_LOC)),andover:JSON.parse(JSON.stringify(DEF_LOC)),individual:[]},
   rocks:[],todos:[],ids:[],ratings:{}
@@ -370,6 +370,12 @@ async function loadSP(force=false){
           if(force||rh!==lastHash){
             D=remote;
             lastHash=rh;
+            // Restore settings from shared data if present
+            if(D.settings){
+              ST=D.settings;
+              saveSettings2(ST);
+              applySettings();
+            }
             saveLocal();
             console.log('Loaded shared data from SharePoint ✅');
             return true;
@@ -660,9 +666,12 @@ function saveSettings(){
   ST.navTabs=ST.navTabs.map((_,i)=>{const el=document.getElementById('sn'+i);return el&&el.value.trim()?el.value.trim():_;});
   ST.scTabs=ST.scTabs.map((_,i)=>{const el=document.getElementById('ss'+i);return el&&el.value.trim()?el.value.trim():_;});
   ST.agendaItems=ST.agendaItems.map((a,i)=>{const l=document.getElementById('sa'+i),m=document.getElementById('sm'+i);return{label:l&&l.value.trim()?l.value.trim():a.label,minutes:m?parseInt(m.value)||a.minutes:a.minutes};});
-  saveSettings2(ST);closeSettings();applySettings();render();
+  saveSettings2(ST); // save locally
+  D.settings=ST;    // include in shared data
+  save();           // push to SharePoint
+  closeSettings();applySettings();render();
 }
-function resetSettings(){if(!confirm('Reset all labels to defaults?'))return;ST=defSettings();saveSettings2(ST);closeSettings();applySettings();render();}
+function resetSettings(){if(!confirm('Reset all labels to defaults?'))return;ST=defSettings();saveSettings2(ST);D.settings=ST;save();closeSettings();applySettings();render();}
 
 // ── STARTUP ───────────────────────────────────────────────────────────────────
 applySettings();
