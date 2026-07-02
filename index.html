@@ -209,6 +209,8 @@ const SP_HOST='journeyautorepair.sharepoint.com';
 const SP_SITE='/sites/Level10MeetingData';
 const SP_LIST='Level10AppData';
 const SP_TITLE='SharedAppState';
+// Hardcoded Planner plan — Journey Auto Level 10 Tasks
+const FIXED_PLAN_ID='h8KG0NpqNkGvaiP7Y0_NMWUAD6t1';
 
 // ── DEFAULTS ─────────────────────────────────────────────────────────────────
 const DEF_NAV=['Agenda','Headlines','Scorecard','Rocks','To-Dos','IDS','Conclude'];
@@ -422,31 +424,16 @@ async function loadMembers(){
 
 // ── PLANNER ───────────────────────────────────────────────────────────────────
 async function loadPlans(){
+  // Use hardcoded plan ID — no group searching needed
+  // This prevents 403 errors for users who can't read all groups
   try{
-    let all=[];
-    try{const r=await gGet('me/planner/plans');all=r.value||[];}catch(e){}
-    try{
-      const g=await gGet('me/memberOf','?$select=id,displayName');
-      for(const grp of(g.value||[])){
-        try{const p=await gGet(`groups/${grp.id}/planner/plans`);all=[...all,...(p.value||[])];}catch(e){}
-      }
-    }catch(e){}
-    const seen=new Set();all=all.filter(p=>{if(seen.has(p.id))return false;seen.add(p.id);return true;});
-    const l10=all.find(p=>p.title&&(p.title.toLowerCase().includes('level10')||p.title.toLowerCase().includes('level 10')||p.title.toLowerCase().includes('journey auto level')));
-    if(l10){msPlanId=l10.id;await loadBuckets();return;}
-    if(all.length){msPlanId=all[0].id;await loadBuckets();return;}
-    await createPlan();
-  }catch(e){console.warn('loadPlans:',e);}
-}
-async function createPlan(){
-  try{
-    const g=await gGet('me/memberOf','?$select=id,displayName');
-    const groups=(g.value||[]).filter(x=>x['@odata.type']==='#microsoft.graph.group');
-    if(!groups.length)return;
-    const pref=groups.find(x=>x.displayName&&(x.displayName.toLowerCase().includes('corporate')||x.displayName.toLowerCase().includes('journey')))||groups[0];
-    const p=await gPost('planner/plans',{owner:pref.id,title:'Journey Auto — Level 10 Tasks'});
-    msPlanId=p.id;await loadBuckets();
-  }catch(e){console.warn('createPlan:',e);}
+    msPlanId=FIXED_PLAN_ID;
+    await loadBuckets();
+    console.log('Connected to Level 10 Planner plan ✅');
+  }catch(e){
+    console.warn('loadPlans error:',e);
+    msPlanId=FIXED_PLAN_ID; // still set it even if bucket load fails
+  }
 }
 async function loadBuckets(){
   if(!msPlanId)return;
