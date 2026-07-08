@@ -224,7 +224,7 @@ select:focus{outline:none;border-color:var(--o)}
 // ── CONFIG ───────────────────────────────────────────────────────────────────
 const CLIENT_ID='2e3191bd-33d5-4a17-bed6-120fe0476f6d';
 const TENANT_ID='51d52d84-027d-48f3-8d09-628380cb4704';
-const SCOPES='Tasks.ReadWrite Group.Read.All Group.ReadWrite.All User.Read User.ReadBasic.All Sites.ReadWrite.All';
+const SCOPES='Tasks.ReadWrite Group.Read.All Group.ReadWrite.All User.Read User.ReadBasic.All Sites.ReadWrite.All Mail.Send';
 const REDIRECT_URI=location.href.split('?')[0].split('#')[0];
 const AUTH_URL=`https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/authorize`;
 const SP_HOST='journeyautorepair.sharepoint.com';
@@ -240,12 +240,14 @@ const MEETING_TYPES={
   admin:{
     label:'Admin Sync',
     members:['Andy','Pete','Devan','Najla'],
+    emails:['andy@journeyautorepair.com','pete@journeyautorepair.com','devan@journeyautorepair.com','najla@journeyautorepair.com'],
     scTabs:['Corporate Goals','Individual'],
     scKeys:['corporate','individual']
   },
   store:{
     label:'Store Sync',
     members:['Andy','Pete','Josh','Dave'],
+    emails:['andy@journeyautorepair.com','pete@journeyautorepair.com','josh@journeyautorepair.com','dave@journeyautorepair.com'],
     scTabs:['New Hope','Andover','Individual'],
     scKeys:['newhope','andover','individual']
   }
@@ -584,6 +586,10 @@ function toggleTimer(){
     save();
     const btn=document.getElementById('timer-btn');
     if(btn){btn.innerHTML='<i class="ti ti-player-play"></i> Start';btn.style.borderColor='var(--gr)';btn.style.color='var(--gr)';}
+    // Prompt to send summary email
+    if(msToken){
+      setTimeout(()=>showEmailPrompt(),300);
+    }
   } else {
     // Start
     timerRunning=true;
@@ -712,6 +718,202 @@ ${'─'.repeat(40)}
   a.href=URL.createObjectURL(blob);
   a.download=`Level10_Summary_${wk.replace(/ /g,'_')}.txt`;
   a.click();
+}
+
+// ── EMAIL ─────────────────────────────────────────────────────────────────────
+function showEmailPrompt(){
+  const mt=curMeeting();
+  const wk=curWeek();
+  const dur=fmtDuration(mData().meetingDurations?.[wk]||0);
+  // Show confirmation in a styled modal
+  const overlay=document.createElement('div');
+  overlay.id='email-prompt-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML=`
+    <div style="background:var(--bg);border-radius:var(--r);border:1px solid var(--bd);padding:1.5rem;width:380px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--o);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-mail" style="color:#fff;font-size:18px"></i></div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--t)">Send meeting summary?</div>
+          <div style="font-size:12px;color:var(--t2);margin-top:2px">${mt.label} · ${wk} · ${dur}</div>
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--t2);margin-bottom:1rem">
+        A summary email will be sent to:<br/>
+        <span style="color:var(--t);font-weight:500">${mt.emails.join(', ')}</span>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button onclick="document.getElementById('email-prompt-overlay').remove()" style="font-size:13px;padding:7px 14px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--bg);color:var(--t);cursor:pointer">Not now</button>
+        <button onclick="sendSummaryEmail()" style="font-size:13px;padding:7px 14px;border-radius:var(--rs);border:none;background:var(--o);color:#fff;cursor:pointer;font-weight:700"><i class="ti ti-send"></i> Send summary</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function sendSummaryEmail(){
+  const overlay=document.getElementById('email-prompt-overlay');
+  if(overlay){
+    overlay.innerHTML=`<div style="background:var(--bg);border-radius:var(--r);padding:2rem;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.2)"><div class="spin" style="width:32px;height:32px;border:3px solid var(--o);border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 1rem"></div><div style="font-size:14px;color:var(--t)">Sending summary email...</div></div>`;
+  }
+  try{
+    const mt=curMeeting();
+    const wk=curWeek();
+    const md=mData();
+    const dur=fmtDuration(md.meetingDurations?.[wk]||0);
+    const wkRatings=(md.weekRatings?.[wk])||[];
+    const avgRating=wkRatings.length?Math.round(wkRatings.reduce((a,b)=>a+b.rating,0)/wkRatings.length*10)/10:null;
+    const wkTodos=(md.todos||[]).filter(t=>t.weekCreated===wk);
+    const wkIds=(md.ids||[]).filter(i=>i.weekCreated===wk);
+    const scKeys=mt.scKeys;
+
+    // Build scorecard HTML
+    let scHtml='';
+    scKeys.forEach(key=>{
+      const rows=D.scorecard[key]||[];
+      if(!rows.length)return;
+      const label=mt.scTabs[scKeys.indexOf(key)]||key;
+      scHtml+=`<h3 style="font-size:14px;color:#FE8630;margin:16px 0 8px">${label}</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tr style="background:#f5f6f7"><th style="padding:6px 10px;text-align:left;border:1px solid #e2e4e7">Metric</th><th style="padding:6px 10px;text-align:left;border:1px solid #e2e4e7">Owner</th><th style="padding:6px 10px;text-align:center;border:1px solid #e2e4e7">Goal</th><th style="padding:6px 10px;text-align:center;border:1px solid #e2e4e7">This week</th><th style="padding:6px 10px;text-align:center;border:1px solid #e2e4e7">Status</th></tr>`;
+      rows.forEach(r=>{
+        const val=r.values?.[wk]??'—';
+        const pct=parseFloat(val)/parseFloat(r.goal);
+        const color=isNaN(pct)?'#6b7280':pct>=1?'#3B6D11':pct>=.75?'#854F0B':'#A32D2D';
+        const status=isNaN(pct)?'—':pct>=1?'✅':pct>=.75?'⚠️':'❌';
+        scHtml+=`<tr><td style="padding:6px 10px;border:1px solid #e2e4e7">${r.metric}</td><td style="padding:6px 10px;border:1px solid #e2e4e7">${r.owner}</td><td style="padding:6px 10px;border:1px solid #e2e4e7;text-align:center">${r.goal}</td><td style="padding:6px 10px;border:1px solid #e2e4e7;text-align:center;font-weight:700;color:${color}">${val}</td><td style="padding:6px 10px;border:1px solid #e2e4e7;text-align:center">${status}</td></tr>`;
+      });
+      scHtml+='</table>';
+    });
+
+    // Build rocks HTML
+    let rocksHtml='<table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f6f7"><th style="padding:6px 10px;text-align:left;border:1px solid #e2e4e7">Rock</th><th style="padding:6px 10px;text-align:left;border:1px solid #e2e4e7">Owner</th><th style="padding:6px 10px;text-align:left;border:1px solid #e2e4e7">Due</th><th style="padding:6px 10px;text-align:center;border:1px solid #e2e4e7">Status</th></tr>';
+    if(D.rocks&&D.rocks.length){
+      D.rocks.forEach(r=>{
+        const sc=r.status==='on'?'✅ On track':r.status==='risk'?'⚠️ At risk':'❌ Off track';
+        rocksHtml+=`<tr><td style="padding:6px 10px;border:1px solid #e2e4e7">${r.rock}</td><td style="padding:6px 10px;border:1px solid #e2e4e7">${r.owner}</td><td style="padding:6px 10px;border:1px solid #e2e4e7">${r.due}</td><td style="padding:6px 10px;border:1px solid #e2e4e7;text-align:center">${sc}</td></tr>`;
+      });
+    }else{rocksHtml+='<tr><td colspan="4" style="padding:8px 10px;border:1px solid #e2e4e7;color:#6b7280">No rocks this quarter</td></tr>';}
+    rocksHtml+='</table>';
+
+    // Build headlines HTML
+    let hlHtml='';
+    (md.headlines||[]).forEach(h=>{
+      const text=h.weekData?.[wk]||'';
+      if(text)hlHtml+=`<div style="margin-bottom:8px"><span style="font-weight:700;color:#FE8630">${h.person}:</span> <span style="color:#1a1d20">${text}</span></div>`;
+    });
+    if(!hlHtml)hlHtml='<div style="color:#6b7280">No headlines recorded</div>';
+
+    // Build todos HTML
+    let todosHtml='';
+    if(wkTodos.length){
+      wkTodos.forEach(t=>{
+        const c=t.status==='done'?'#3B6D11':'#854F0B';
+        todosHtml+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:6px 10px;background:#f5f6f7;border-radius:4px"><span style="font-size:11px;font-weight:700;color:${c};text-transform:uppercase">${t.status}</span><span style="color:#1a1d20;flex:1">${t.task}</span><span style="color:#6b7280;font-size:12px">→ ${t.owner} (${t.due})</span></div>`;
+      });
+    }else{todosHtml='<div style="color:#6b7280">No to-dos added this meeting</div>';}
+
+    // Build IDS HTML
+    let idsHtml='';
+    if(wkIds.length){
+      wkIds.forEach(i=>{
+        const c=i.status==='solved'?'#3B6D11':'#A32D2D';
+        idsHtml+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:6px 10px;background:#f5f6f7;border-radius:4px"><span style="font-size:11px;font-weight:700;color:${c};text-transform:uppercase">${i.status}</span><span style="color:#1a1d20">${i.issue}</span></div>`;
+      });
+    }else{idsHtml='<div style="color:#6b7280">No issues this meeting</div>';}
+
+    // Build ratings HTML
+    let ratHtml='';
+    if(wkRatings.length){
+      wkRatings.forEach(r=>{
+        const c=r.rating>=3.5?'#3B6D11':r.rating>=2.5?'#854F0B':'#A32D2D';
+        ratHtml+=`<div style="margin-bottom:6px;padding:6px 10px;background:#f5f6f7;border-radius:4px"><span style="font-weight:700;color:#1a1d20">${r.person}</span> <span style="font-weight:700;color:${c}">${r.rating}/4</span>${r.note?` <span style="color:#6b7280;font-size:12px">— "${r.note}"</span>`:''}</div>`;
+      });
+    }else{ratHtml='<div style="color:#6b7280">No ratings submitted</div>';}
+
+    // Full email HTML
+    const emailHtml=`<!DOCTYPE html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:640px;margin:0 auto;padding:20px;color:#1a1d20">
+      <div style="background:#FE8630;border-radius:8px;padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;gap:12px">
+        <div style="font-size:24px">🚗</div>
+        <div>
+          <div style="font-size:18px;font-weight:700;color:#fff">Journey Auto Repair</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.85)">${mt.label} Meeting Summary · ${wk}</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-bottom:24px">
+        <div style="flex:1;background:#f5f6f7;border-radius:6px;padding:12px 16px;text-align:center">
+          <div style="font-size:11px;color:#6b7280;margin-bottom:4px">DURATION</div>
+          <div style="font-size:20px;font-weight:700;color:#1a1d20">${dur}</div>
+        </div>
+        <div style="flex:1;background:#f5f6f7;border-radius:6px;padding:12px 16px;text-align:center">
+          <div style="font-size:11px;color:#6b7280;margin-bottom:4px">TEAM AVG RATING</div>
+          <div style="font-size:20px;font-weight:700;color:${avgRating>=3.5?'#3B6D11':avgRating>=2.5?'#854F0B':'#A32D2D'}">${avgRating?avgRating+'/4':'—'}</div>
+        </div>
+        <div style="flex:1;background:#f5f6f7;border-radius:6px;padding:12px 16px;text-align:center">
+          <div style="font-size:11px;color:#6b7280;margin-bottom:4px">OPEN TO-DOS</div>
+          <div style="font-size:20px;font-weight:700;color:#1a1d20">${(md.todos||[]).filter(t=>t.status==='open').length}</div>
+        </div>
+      </div>
+
+      <h2 style="font-size:14px;font-weight:700;color:#FE8630;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #FE8630;padding-bottom:6px;margin-bottom:12px">📋 Scorecard</h2>
+      ${scHtml}
+
+      <h2 style="font-size:14px;font-weight:700;color:#FE8630;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #FE8630;padding-bottom:6px;margin:24px 0 12px">⛰️ Rocks</h2>
+      ${rocksHtml}
+
+      <h2 style="font-size:14px;font-weight:700;color:#FE8630;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #FE8630;padding-bottom:6px;margin:24px 0 12px">👋 Headlines / Check-in</h2>
+      ${hlHtml}
+
+      <h2 style="font-size:14px;font-weight:700;color:#FE8630;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #FE8630;padding-bottom:6px;margin:24px 0 12px">✅ To-Dos Added This Meeting</h2>
+      ${todosHtml}
+
+      <h2 style="font-size:14px;font-weight:700;color:#FE8630;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #FE8630;padding-bottom:6px;margin:24px 0 12px">🔥 Issues (IDS)</h2>
+      ${idsHtml}
+
+      <h2 style="font-size:14px;font-weight:700;color:#FE8630;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #FE8630;padding-bottom:6px;margin:24px 0 12px">⭐ Meeting Ratings</h2>
+      ${ratHtml}
+
+      <div style="margin-top:32px;padding:16px;background:#f5f6f7;border-radius:6px;text-align:center;font-size:12px;color:#6b7280">
+        Sent automatically by Journey Auto Repair Level 10 Meeting App<br/>
+        <a href="https://acdauer.github.io/journey-level10/" style="color:#FE8630">Open the app</a>
+      </div>
+    </body></html>`;
+
+    // Send via Microsoft Graph Mail API
+    const toRecipients=mt.emails.map(e=>({emailAddress:{address:e}}));
+    await fetch('https://graph.microsoft.com/v1.0/me/sendMail',{
+      method:'POST',
+      headers:{Authorization:`Bearer ${msToken}`,'Content-Type':'application/json'},
+      body:JSON.stringify({
+        message:{
+          subject:`${mt.label} Meeting Summary — ${wk}`,
+          body:{contentType:'HTML',content:emailHtml},
+          toRecipients
+        },
+        saveToSentItems:true
+      })
+    });
+
+    // Success
+    if(overlay){
+      overlay.innerHTML=`<div style="background:var(--bg);border-radius:var(--r);padding:2rem;text-align:center;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+        <div style="font-size:36px;margin-bottom:12px">✅</div>
+        <div style="font-size:15px;font-weight:700;color:var(--t);margin-bottom:6px">Summary sent!</div>
+        <div style="font-size:13px;color:var(--t2);margin-bottom:16px">Emailed to ${mt.members.join(', ')}</div>
+        <button onclick="document.getElementById('email-prompt-overlay').remove()" style="font-size:13px;padding:7px 20px;border-radius:var(--rs);border:none;background:var(--o);color:#fff;cursor:pointer;font-weight:700">Done</button>
+      </div>`;
+    }
+  }catch(e){
+    console.error('Email send error:',e);
+    if(overlay){
+      overlay.innerHTML=`<div style="background:var(--bg);border-radius:var(--r);padding:2rem;text-align:center;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+        <div style="font-size:36px;margin-bottom:12px">❌</div>
+        <div style="font-size:15px;font-weight:700;color:var(--t);margin-bottom:6px">Email failed to send</div>
+        <div style="font-size:13px;color:var(--t2);margin-bottom:16px">Check that Mail.Send permission is granted in Azure</div>
+        <button onclick="document.getElementById('email-prompt-overlay').remove()" style="font-size:13px;padding:7px 20px;border-radius:var(--rs);border:none;background:var(--o);color:#fff;cursor:pointer;font-weight:700">Close</button>
+      </div>`;
+    }
+  }
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
