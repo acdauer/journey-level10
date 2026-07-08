@@ -144,6 +144,13 @@ select:focus{outline:none;border-color:var(--o)}
     </div>
     <div class="hdr-r">
       <div class="wpill" id="wk-label">Loading...</div>
+      <select id="meeting-type-select" onchange="switchMeetingType(this.value)" style="font-size:12px;padding:5px 10px;border-radius:var(--rs);border:2px solid var(--o);background:var(--bg);color:var(--o);font-weight:700;cursor:pointer">
+        <option value="admin">Admin Sync</option>
+        <option value="store">Store Sync</option>
+      </select>
+      <div id="timer-display" style="font-size:13px;font-weight:700;color:var(--t2);min-width:52px;text-align:center">00:00</div>
+      <button class="ibtn" id="timer-btn" onclick="toggleTimer()" style="border-color:var(--gr);color:var(--gr)"><i class="ti ti-player-play"></i> Start</button>
+      <button class="ibtn" onclick="openHistory()"><i class="ti ti-history"></i> History</button>
       <button class="ibtn" onclick="addWeek()"><i class="ti ti-calendar-plus"></i> New week</button>
       <button class="ibtn ob" onclick="openSettings()"><i class="ti ti-settings"></i> Settings</button>
     </div>
@@ -197,6 +204,21 @@ select:focus{outline:none;border-color:var(--o)}
   </div></div>
 
   <div id="content"></div>
+
+  <!-- HISTORY MODAL -->
+  <div class="moverlay" id="history-modal" style="z-index:1500">
+    <div class="modal" style="width:680px;max-width:96vw;max-height:92vh">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div class="mtitle" style="margin:0">Meeting history</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="history-week-select" onchange="renderHistoryWeek(this.value)" style="font-size:12px;padding:4px 8px"></select>
+          <button class="bsav" onclick="exportSummary()" style="font-size:12px;padding:5px 12px"><i class="ti ti-download"></i> Export</button>
+          <button class="bcnl" onclick="closeHistory()">Close</button>
+        </div>
+      </div>
+      <div id="history-content" style="overflow-y:auto;max-height:75vh"></div>
+    </div>
+  </div>
 </div>
 <script>
 // ── CONFIG ───────────────────────────────────────────────────────────────────
@@ -213,6 +235,23 @@ const SP_TITLE='SharedAppState';
 const FIXED_PLAN_ID='h8KG0NpqNkGvaiP7Y0_NMWUAD6t1';
 
 // ── DEFAULTS ─────────────────────────────────────────────────────────────────
+// ── MEETING TYPES ────────────────────────────────────────────────────────────
+const MEETING_TYPES={
+  admin:{
+    label:'Admin Sync',
+    members:['Andy','Pete','Devan','Najla'],
+    scTabs:['Corporate Goals','Individual'],
+    scKeys:['corporate','individual']
+  },
+  store:{
+    label:'Store Sync',
+    members:['Andy','Pete','Josh','Dave'],
+    scTabs:['New Hope','Andover','Individual'],
+    scKeys:['newhope','andover','individual']
+  }
+};
+let activeMeetingType='admin'; // default
+
 const DEF_NAV=['Agenda','Headlines','Scorecard','Rocks','To-Dos','IDS','Conclude'];
 const DEF_ICONS=['ti-list-check','ti-speakerphone','ti-chart-bar','ti-mountain','ti-checkbox','ti-flame','ti-star'];
 const DEF_KEYS=['agenda','headlines','scorecard','rocks','todos','ids','conclude'];
@@ -244,6 +283,8 @@ const DEF_LOC=[
 let msToken=null,msUser=null,msMembers=[],msPlanId=null,msBuckets={};
 let spItemId=null,syncTimer=null,lastHash='';
 let activeSection='agenda',activeSCTab=0,modalCtx=null;
+// Timer state
+let timerStart=null,timerElapsed=0,timerRunning=false,timerInterval=null;
 
 // ── SETTINGS ─────────────────────────────────────────────────────────────────
 function defSettings(){return{orgName:'Journey Auto Repair',meetingName:'Level 10 weekly meeting',navTabs:[...DEF_NAV],scTabs:[...DEF_SC],agendaItems:JSON.parse(JSON.stringify(DEF_AGENDA))};}
@@ -259,9 +300,33 @@ function applySettings(){
 // ── DATA ─────────────────────────────────────────────────────────────────────
 function defData(){return{
   weeks:[wkLabel(0)],wkIdx:0,agDone:{},settings:null,
-  headlines:[{id:1,person:'Andy',text:''},{id:2,person:'Devan',text:''},{id:3,person:'Najla',text:''},{id:4,person:'New Hope Manager',text:''},{id:5,person:'Andover Manager',text:''}],
+  // Shared across both meetings
+  rocks:[],
   scorecard:{corporate:JSON.parse(JSON.stringify(DEF_CORP)),newhope:JSON.parse(JSON.stringify(DEF_LOC)),andover:JSON.parse(JSON.stringify(DEF_LOC)),individual:[]},
-  rocks:[],todos:[],ids:[],ratings:{}
+  // Per-meeting-type data — keyed by meeting type (admin/store)
+  meetings:{
+    admin:{
+      headlines:[
+        {id:1,person:'Andy',text:'',weekData:{}},
+        {id:2,person:'Pete',text:'',weekData:{}},
+        {id:3,person:'Devan',text:'',weekData:{}},
+        {id:4,person:'Najla',text:'',weekData:{}}
+      ],
+      todos:[],ids:[],
+      weekRatings:{},meetingDurations:{},agDone:{}
+    },
+    store:{
+      headlines:[
+        {id:1,person:'Andy',text:'',weekData:{}},
+        {id:2,person:'Pete',text:'',weekData:{}},
+        {id:3,person:'Josh',text:'',weekData:{}},
+        {id:4,person:'Dave',text:'',weekData:{}}
+      ],
+      todos:[],ids:[],
+      weekRatings:{},meetingDurations:{},agDone:{}
+    }
+  },
+  ratings:{},weekRatings:{},meetingDurations:{} // legacy
 };}
 function loadLocal(){try{const r=localStorage.getItem('jl10_data');if(r)return JSON.parse(r);}catch(e){}return defData();}
 function saveLocal(){try{localStorage.setItem('jl10_data',JSON.stringify(D));}catch(e){}}
@@ -279,6 +344,23 @@ function wkLabel(off){
 }
 function curWeek(){return D.weeks[D.wkIdx]||D.weeks[D.weeks.length-1];}
 function addWeek(){const n=wkLabel(D.weeks.length);if(!D.weeks.includes(n)){D.weeks.push(n);D.wkIdx=D.weeks.length-1;}save();render();}
+
+// Get current meeting's data safely
+function mData(){
+  if(!D.meetings)D.meetings={admin:{headlines:[],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}},store:{headlines:[],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}}};
+  if(!D.meetings[activeMeetingType])D.meetings[activeMeetingType]={headlines:[],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}};
+  return D.meetings[activeMeetingType];
+}
+function curMeeting(){return MEETING_TYPES[activeMeetingType];}
+function switchMeetingType(type){
+  activeMeetingType=type;
+  activeSCTab=0;
+  // Reset timer for new meeting context
+  if(timerRunning)toggleTimer();
+  timerElapsed=0;selectedRating=null;
+  updateTimerDisplay();
+  render();
+}
 
 // ── AUTH ─────────────────────────────────────────────────────────────────────
 function isTeams(){try{return window.parent!==window||window.navigator.userAgent.includes('Teams')||(typeof microsoftTeams!=='undefined'&&!!microsoftTeams);}catch(e){return false;}}
@@ -487,15 +569,162 @@ function memberSelect(sel,fid){
   return `<div class="fld"><label>Assign to</label><select id="${fid}">${opts}</select></div>`;
 }
 
+// ── TIMER ─────────────────────────────────────────────────────────────────────
+function toggleTimer(){
+  if(timerRunning){
+    // Stop
+    timerRunning=false;
+    clearInterval(timerInterval);
+    timerElapsed+=Math.floor((Date.now()-timerStart)/1000);
+    timerStart=null;
+    // Save duration for this meeting type
+    const md=mData();
+    if(!md.meetingDurations)md.meetingDurations={};
+    md.meetingDurations[curWeek()]=timerElapsed;
+    save();
+    const btn=document.getElementById('timer-btn');
+    if(btn){btn.innerHTML='<i class="ti ti-player-play"></i> Start';btn.style.borderColor='var(--gr)';btn.style.color='var(--gr)';}
+  } else {
+    // Start
+    timerRunning=true;
+    timerStart=Date.now();
+    const btn=document.getElementById('timer-btn');
+    if(btn){btn.innerHTML='<i class="ti ti-player-stop"></i> Stop';btn.style.borderColor='var(--re)';btn.style.color='var(--re)';}
+    timerInterval=setInterval(updateTimerDisplay,1000);
+  }
+}
+function updateTimerDisplay(){
+  const el=document.getElementById('timer-display');
+  if(!el)return;
+  const total=timerElapsed+(timerRunning?Math.floor((Date.now()-timerStart)/1000):0);
+  const m=Math.floor(total/60),s=total%60;
+  el.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  el.style.color=total>5400?'var(--re)':total>4800?'var(--am)':'var(--t2)';
+}
+function fmtDuration(secs){
+  if(!secs)return'—';
+  const m=Math.floor(secs/60),s=secs%60;
+  return m+'m '+(s>0?s+'s':'');
+}
+
+// ── HISTORY ───────────────────────────────────────────────────────────────────
+function openHistory(){
+  const sel=document.getElementById('history-week-select');
+  const weeks=[...D.weeks].reverse();
+  sel.innerHTML=weeks.map(w=>`<option value="${w}">${w}</option>`).join('');
+  renderHistoryWeek(weeks[0]);
+  const modal=document.getElementById('history-modal');
+  const title=modal.querySelector('.mtitle');
+  if(title)title.textContent=curMeeting().label+' — Meeting history';
+  modal.classList.add('open');
+}
+function closeHistory(){document.getElementById('history-modal').classList.remove('open');}
+document.getElementById('history-modal').addEventListener('click',e=>{if(e.target===document.getElementById('history-modal'))closeHistory();});
+
+function renderHistoryWeek(wk){
+  if(!wk)return;
+  const hc=document.getElementById('history-content');
+  if(!hc)return;
+  const md=mData();
+
+  // Headlines
+  const wkHeadlines=(md.headlines||[]).filter(h=>h.weekData&&h.weekData[wk]).map(h=>`<div style="margin-bottom:8px"><span style="font-size:11px;font-weight:700;color:var(--o)">${h.person}</span><div style="font-size:13px;color:var(--t);margin-top:2px">${h.weekData[wk]||'—'}</div></div>`).join('');
+  const hlSection=wkHeadlines||`<div style="color:var(--t2);font-size:13px">No headlines recorded</div>`;
+
+  // To-Dos created this week
+  const wkTodos=(md.todos||[]).filter(t=>t.weekCreated===wk);
+  const tdSection=wkTodos.length?wkTodos.map(t=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:11px;padding:2px 7px;border-radius:4px;font-weight:700;background:${t.status==='done'?'var(--gr2)':'var(--am2)'};color:${t.status==='done'?'var(--gr)':'var(--am)'}">${t.status}</span><span style="font-size:13px;color:var(--t)">${t.task}</span><span style="font-size:11px;color:var(--t2);margin-left:auto">→ ${t.owner}</span></div>`).join(''):`<div style="color:var(--t2);font-size:13px">No to-dos added</div>`;
+
+  // IDS issues this week
+  const wkIds=(md.ids||[]).filter(i=>i.weekCreated===wk);
+  const idsSection=wkIds.length?wkIds.map(i=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:11px;padding:2px 7px;border-radius:4px;font-weight:700;background:${i.status==='solved'?'var(--gr2)':'var(--re2)'};color:${i.status==='solved'?'var(--gr)':'var(--re)'}">${i.status}</span><span style="font-size:13px;color:var(--t)">${i.issue}</span></div>`).join(''):`<div style="color:var(--t2);font-size:13px">No issues recorded</div>`;
+
+  // Ratings this week
+  const wkRatings=md.weekRatings&&md.weekRatings[wk]?md.weekRatings[wk]:[];
+  const avgRating=wkRatings.length?Math.round(wkRatings.reduce((a,b)=>a+b.rating,0)/wkRatings.length*10)/10:null;
+  const ratSection=wkRatings.length?`<div style="margin-bottom:10px;display:flex;align-items:center;gap:10px"><span style="font-size:22px;font-weight:700;color:${avgRating>=3.5?'var(--gr)':avgRating>=2.5?'var(--am)':'var(--re)'}">${avgRating}/4</span><span style="font-size:12px;color:var(--t2)">team average</span></div>`+wkRatings.map(r=>`<div style="margin-bottom:8px;padding:8px 12px;background:var(--bg2);border-radius:var(--rs);border:1px solid var(--bd)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:${r.note?'4px':'0'}"><span style="font-size:12px;font-weight:700;color:var(--t)">${r.person}</span><span style="font-size:11px;padding:2px 8px;border-radius:4px;background:${r.rating>=3.5?'var(--gr2)':r.rating>=2.5?'var(--am2)':'var(--re2)'};color:${r.rating>=3.5?'var(--gr)':r.rating>=2.5?'var(--am)':'var(--re)'};font-weight:700">${r.rating}/4</span></div>${r.note?`<div style="font-size:12px;color:var(--t2)">"${r.note}"</div>`:''}</div>`).join(''):`<div style="color:var(--t2);font-size:13px">No ratings submitted</div>`;
+
+  // Duration
+  const dur=md.meetingDurations&&md.meetingDurations[wk]?fmtDuration(md.meetingDurations[wk]):'Not recorded';
+
+  hc.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
+      <div style="background:var(--bg2);border-radius:var(--rs);padding:10px 14px;border:1px solid var(--bd)"><div style="font-size:11px;color:var(--t2);margin-bottom:2px">Meeting duration</div><div style="font-size:16px;font-weight:700;color:var(--t)">${dur}</div></div>
+      <div style="background:var(--bg2);border-radius:var(--rs);padding:10px 14px;border:1px solid var(--bd)"><div style="font-size:11px;color:var(--t2);margin-bottom:2px">Team avg rating</div><div style="font-size:16px;font-weight:700;color:${avgRating>=3.5?'var(--gr)':avgRating>=2.5?'var(--am)':'var(--re)'}">${avgRating?avgRating+'/4':'—'}</div></div>
+    </div>
+    <div style="margin-bottom:1rem"><div style="font-size:12px;font-weight:700;color:var(--o);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--bd)">Headlines / check-in</div>${hlSection}</div>
+    <div style="margin-bottom:1rem"><div style="font-size:12px;font-weight:700;color:var(--o);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--bd)">To-dos added this meeting</div>${tdSection}</div>
+    <div style="margin-bottom:1rem"><div style="font-size:12px;font-weight:700;color:var(--o);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--bd)">Issues (IDS)</div>${idsSection}</div>
+    <div style="margin-bottom:1rem"><div style="font-size:12px;font-weight:700;color:var(--o);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--bd)">Meeting ratings</div>${ratSection}</div>`;
+}
+
+function exportSummary(){
+  const sel=document.getElementById('history-week-select');
+  const wk=sel?sel.value:curWeek();
+  const md2=mData();
+  const wkRatings=md2.weekRatings&&md2.weekRatings[wk]?md2.weekRatings[wk]:[];
+  const avgRating=wkRatings.length?Math.round(wkRatings.reduce((a,b)=>a+b.rating,0)/wkRatings.length*10)/10:null;
+  const dur=md2.meetingDurations&&md.meetingDurations[wk]?fmtDuration(md.meetingDurations[wk]):'Not recorded';
+  const wkTodos=(md2.todos||[]).filter(t=>t.weekCreated===wk);
+  const wkIds=(md2.ids||[]).filter(i=>i.weekCreated===wk);
+
+  let txt=`JOURNEY AUTO REPAIR — ${curMeeting().label.toUpperCase()} MEETING SUMMARY
+`;
+  txt+=`Week: ${wk}
+`;
+  txt+=`Duration: ${dur}
+`;
+  txt+=`Team avg rating: ${avgRating?avgRating+'/4':'—'}
+
+`;
+  txt+=`HEADLINES / CHECK-IN
+${'─'.repeat(40)}
+`;
+  (md.headlines||[]).forEach(h=>{if(h.weekData&&h.weekData[wk])txt+=`${h.person}: ${h.weekData[wk]}
+`;});
+  txt+=`
+TO-DOS ADDED THIS MEETING
+${'─'.repeat(40)}
+`;
+  wkTodos.forEach(t=>txt+=`[${t.status.toUpperCase()}] ${t.task} → ${t.owner} (due ${t.due})
+`);
+  if(!wkTodos.length)txt+=`None
+`;
+  txt+=`
+ISSUES (IDS)
+${'─'.repeat(40)}
+`;
+  wkIds.forEach(i=>txt+=`[${i.status.toUpperCase()}] ${i.issue}
+`);
+  if(!wkIds.length)txt+=`None
+`;
+  txt+=`
+MEETING RATINGS
+${'─'.repeat(40)}
+`;
+  wkRatings.forEach(r=>txt+=`${r.person}: ${r.rating}/4${r.note?' — "'+r.note+'"':''}
+`);
+  if(!wkRatings.length)txt+=`None submitted
+`;
+
+  const blob=new Blob([txt],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`Level10_Summary_${wk.replace(/ /g,'_')}.txt`;
+  a.click();
+}
+
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function render(){
   // Summary
   const wk=curWeek();
   const el=document.getElementById('wk-label');if(el)el.textContent=wk;
-  const allSC=Object.values(D.scorecard).flat();
+  const md=mData();
+  const mtScKeys=curMeeting().scKeys;
+  const allSC=mtScKeys.map(k=>D.scorecard[k]||[]).flat();
   const scOn=allSC.filter(r=>status(r.values[wk],r.goal)==='g').length;
-  const openT=D.todos.filter(t=>t.status==='open').length;
-  const openI=D.ids.filter(i=>i.status==='open').length;
+  const openT=(md.todos||[]).filter(t=>t.status==='open').length;
+  const openI=(md.ids||[]).filter(i=>i.status==='open').length;
   const rOn=D.rocks.filter(r=>r.status==='on').length;
   const sg=document.getElementById('sgrid');
   if(sg)sg.innerHTML=`
@@ -516,23 +745,38 @@ function sw(s,el){activeSection=s;document.querySelectorAll('.ntab').forEach(t=>
 
 // ── AGENDA ────────────────────────────────────────────────────────────────────
 function rAgenda(){
-  const wk=curWeek(),done=D.agDone[wk]||{},items=ST.agendaItems;
+  const wk=curWeek(),md=mData(),done=(md.agDone&&md.agDone[wk])||{},items=ST.agendaItems;
   const rows=items.map((a,i)=>`<div class="arow"><div class="anum">${i+1}</div><div style="flex:1;font-size:13px;${done[i]?'text-decoration:line-through;color:var(--t2)':''}">${a.label}</div><div style="display:flex;align-items:center;gap:10px"><span style="font-size:11px;color:var(--t2)">${a.minutes} min</span><input type="checkbox" ${done[i]?'checked':''} onchange="togAg(${i})" style="width:16px;height:16px;accent-color:var(--o);cursor:pointer"/></div></div>`).join('');
   const tot=items.reduce((s,a)=>s+a.minutes,0);
   return `<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-list-check"></i><div><div class="ctitle">${ST.navTabs[0]}</div><div class="csub">${tot} min total</div></div></div><span class="tbadge">${tot} min</span></div>${rows}</div>`;
 }
-function togAg(i){const wk=curWeek();if(!D.agDone[wk])D.agDone[wk]={};D.agDone[wk][i]=!D.agDone[wk][i];save();render();}
+function togAg(i){const wk=curWeek(),md=mData();if(!md.agDone)md.agDone={};if(!md.agDone[wk])md.agDone[wk]={};md.agDone[wk][i]=!md.agDone[wk][i];save();render();}
 
 // ── HEADLINES ─────────────────────────────────────────────────────────────────
 function rHeadlines(){
-  const rows=D.headlines.map((h,i)=>`<div class="hlrow"><div class="hlp">${h.person}</div><input class="tf" value="${h.text||''}" placeholder="Type headline here..." onchange="updHL(${i},this.value)"/></div>`).join('');
-  return `<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-speakerphone"></i><div><div class="ctitle">${ST.navTabs[1]}</div><div class="csub">Fill in before the meeting</div></div></div><span class="tbadge">5 min</span></div>${rows}<button class="addbtn" onclick="openModal('hl')"><i class="ti ti-plus"></i> Add person</button></div>`;
+  const wk=curWeek(),md=mData();
+  if(!md.headlines||!md.headlines.length){
+    md.headlines=curMeeting().members.map((p,i)=>({id:i+1,person:p,text:'',weekData:{}}));
+  }
+  const rows=md.headlines.map((h,i)=>{
+    if(!h.weekData)h.weekData={};
+    const val=h.weekData[wk]||'';
+    return `<div class="hlrow"><div class="hlp">${h.person}</div><input class="tf" value="${val}" placeholder="Type headline here..." onchange="updHL(${i},this.value)"/></div>`;
+  }).join('');
+  return `<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-speakerphone"></i><div><div class="ctitle">${ST.navTabs[1]}</div><div class="csub">${curMeeting().label} — fill in before the meeting</div></div></div><a href="https://feelingswheel.com/" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--o);text-decoration:none;padding:4px 10px;border-radius:var(--rs);border:1px solid var(--o);white-space:nowrap"><i class="ti ti-mood-smile"></i> Feelings wheel</a></div>${rows}<button class="addbtn" onclick="openModal('hl')"><i class="ti ti-plus"></i> Add person</button></div>`;
 }
-function updHL(i,v){D.headlines[i].text=v;save();}
+function updHL(i,v){
+  const wk=curWeek(),md=mData();
+  if(!md.headlines[i].weekData)md.headlines[i].weekData={};
+  md.headlines[i].weekData[wk]=v;
+  md.headlines[i].text=v;
+  save();
+}
 
 // ── SCORECARD ─────────────────────────────────────────────────────────────────
 function rScorecard(){
-  const key=DEF_SC_KEYS[activeSCTab],rows=D.scorecard[key],vis=D.weeks.slice(-5);
+  const mtScKeys=curMeeting().scKeys;
+  const key=mtScKeys[activeSCTab]||mtScKeys[0],rows=D.scorecard[key],vis=D.weeks.slice(-5);
   const thW=vis.map(w=>`<th style="text-align:center;min-width:70px">${w}</th>`).join('');
   let tbody='';
   if(!rows.length)tbody=`<tr><td colspan="${4+vis.length}" style="padding:2rem;text-align:center;color:var(--t2)">No metrics yet</td></tr>`;
@@ -545,7 +789,8 @@ function rScorecard(){
     const cv=r.values[vis[vis.length-1]]??'';
     tbody+=`<tr><td style="width:24%"><input class="ie" value="${r.metric}" onchange="updSCF('${key}',${ri},'metric',this.value)"/>${r.freq&&r.freq!=='Weekly'?`<div class="fn">${r.freq}</div>`:''}</td><td style="width:13%"><input class="ie" value="${r.owner}" onchange="updSCF('${key}',${ri},'owner',this.value)"/></td><td style="width:9%;text-align:center"><input class="ien" type="number" min="0" value="${r.goal}" onchange="updSCF('${key}',${ri},'goal',this.value)"/></td>${tds}<td style="width:8%;text-align:center">${sbadge(cv,r.goal)}</td><td style="width:32px;text-align:center"><button class="rbtn" onclick="delSC('${key}',${ri})"><i class="ti ti-trash" style="font-size:12px"></i></button></td></tr>`;
   });
-  const tabs=ST.scTabs.map((t,i)=>`<div class="sctab ${i===activeSCTab?'active':''}" onclick="swSC(${i})">${t}</div>`).join('');
+  const mtScTabs=curMeeting().scTabs;
+  const tabs=mtScTabs.map((t,i)=>`<div class="sctab ${i===activeSCTab?'active':''}" onclick="swSC(${i})">${t}</div>`).join('');
   return `<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-chart-bar"></i><div><div class="ctitle">${ST.navTabs[2]}</div><div class="csub">Last 5 weeks — fill in before the meeting</div></div></div><span class="tbadge">5 min</span></div><div class="sctabs">${tabs}</div><div class="twrap"><table><thead><tr><th style="width:24%">Metric</th><th style="width:13%">Owner</th><th style="width:9%;text-align:center">Goal</th>${thW}<th style="width:8%;text-align:center">Status</th><th style="width:32px"></th></tr></thead><tbody>${tbody}</tbody></table></div><div class="ehint"><i class="ti ti-pencil" style="color:var(--o)"></i> Click any metric, owner, or goal to edit</div><button class="addbtn" onclick="openModal('sc')"><i class="ti ti-plus"></i> Add metric</button></div>`;
 }
 function swSC(i){activeSCTab=i;render();}
@@ -569,9 +814,11 @@ function delR(i){if(confirm('Delete this rock?')){D.rocks.splice(i,1);save();ren
 
 // ── TO-DOS ────────────────────────────────────────────────────────────────────
 function rTodos(){
-  const open=D.todos.filter(t=>t.status==='open'),done=D.todos.filter(t=>t.status==='done'),carry=D.todos.filter(t=>t.status==='carry');
+  const md=mData();
+  if(!md.todos)md.todos=[];
+  const open=md.todos.filter(t=>t.status==='open'),done=md.todos.filter(t=>t.status==='done'),carry=md.todos.filter(t=>t.status==='carry');
   function tr(t){
-    const i=D.todos.indexOf(t);
+    const i=md.todos.indexOf(t);
     return `<div class="cw"><input type="checkbox" ${t.status==='done'?'checked':''} onchange="togT(${i})" style="width:16px;height:16px;accent-color:var(--o);cursor:pointer;flex-shrink:0;margin-top:2px"/><div style="flex:1"><div style="display:flex;align-items:center;gap:6px"><input class="ie" value="${t.task}" style="${t.status==='done'?'text-decoration:line-through;color:var(--t2)':''}" onchange="updTF(${i},'task',this.value)"/>${t.plannerSynced?'<span class="ptag">✓ Planner</span>':''}</div><div style="display:flex;gap:6px;align-items:center;margin-top:3px;flex-wrap:wrap"><span style="font-size:11px;color:var(--t2)">Owner:</span><input class="ie" value="${t.owner}" style="font-size:11px;color:var(--t2);width:110px" onchange="updTF(${i},'owner',this.value)"/><span style="font-size:11px;color:var(--t2)">Due:</span><input class="ie" value="${t.due}" style="font-size:11px;color:var(--t2);width:80px" onchange="updTF(${i},'due',this.value)"/></div></div><select onchange="updTS(${i},this.value)"><option value="open" ${t.status==='open'?'selected':''}>Open</option><option value="done" ${t.status==='done'?'selected':''}>Done</option><option value="carry" ${t.status==='carry'?'selected':''}>Carry over</option><option value="dropped" ${t.status==='dropped'?'selected':''}>Dropped</option></select><button class="rbtn" onclick="delT(${i})"><i class="ti ti-trash" style="font-size:12px"></i></button></div>`;
   }
   const note=msToken&&msPlanId?`<div class="notice gn"><i class="ti ti-brand-microsoft"></i> New to-dos sync to Microsoft Planner & To Do automatically</div>`:`<div class="notice am"><i class="ti ti-brand-microsoft"></i> Sign in to auto-sync tasks to Planner & To Do</div>`;
@@ -581,17 +828,19 @@ function rTodos(){
   h+=`<button class="addbtn" onclick="openModal('todo')"><i class="ti ti-plus"></i> Add to-do</button></div>`;
   return h;
 }
-function togT(i){D.todos[i].status=D.todos[i].status==='done'?'open':'done';if(D.todos[i].status==='done'&&D.todos[i].plannerId)completePlannerTask(D.todos[i].plannerId);save();render();}
-function updTF(i,f,v){D.todos[i][f]=v;save();}
-function updTS(i,v){D.todos[i].status=v;save();render();}
-function delT(i){if(confirm('Delete this to-do?')){D.todos.splice(i,1);save();render();}}
+function togT(i){const md=mData();md.todos[i].status=md.todos[i].status==='done'?'open':'done';if(md.todos[i].status==='done'&&md.todos[i].plannerId)completePlannerTask(md.todos[i].plannerId);save();render();}
+function updTF(i,f,v){const md=mData();md.todos[i][f]=v;save();}
+function updTS(i,v){const md=mData();md.todos[i].status=v;save();render();}
+function delT(i){if(confirm('Delete this to-do?')){const md=mData();md.todos.splice(i,1);save();render();}}
 
 // ── IDS ───────────────────────────────────────────────────────────────────────
 function rIDS(){
-  const open=D.ids.filter(x=>x.status==='open'),solved=D.ids.filter(x=>x.status==='solved');
+  const md=mData();
+  if(!md.ids)md.ids=[];
+  const open=md.ids.filter(x=>x.status==='open'),solved=md.ids.filter(x=>x.status==='solved');
   const pc={high:'hi',med:'me',low:'lo'};
   function ir(x){
-    const i=D.ids.indexOf(x);
+    const i=md.ids.indexOf(x);
     return `<div class="cw"><div style="flex:1"><div style="display:flex;align-items:center;gap:7px;margin-bottom:4px"><span class="iph ${pc[x.priority]||'me'}">${x.priority||'med'}</span><input class="ie" value="${x.issue}" style="font-weight:700;font-size:13px" onchange="updIF(${i},'issue',this.value)"/></div>${x.notes?`<div style="font-size:11px;color:var(--t2);margin-bottom:3px">${x.notes}</div>`:''}<div style="font-size:11px;color:var(--t2);display:flex;gap:6px;align-items:center">Raised by:<input class="ie" value="${x.raisedBy}" style="font-size:11px;color:var(--t2);width:110px" onchange="updIF(${i},'raisedBy',this.value)"/></div></div><select onchange="updIS(${i},this.value)"><option value="open" ${x.status==='open'?'selected':''}>Open</option><option value="solved" ${x.status==='solved'?'selected':''}>Solved</option><option value="todo">Move to to-do</option></select><button class="rbtn" onclick="delI(${i})"><i class="ti ti-trash" style="font-size:12px"></i></button></div>`;
   }
   let h=`<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-flame"></i><div><div class="ctitle">${ST.navTabs[5]}</div><div class="csub">${open.length} open issue${open.length!==1?'s':''}</div></div></div><span class="tbadge">60 min</span></div>`;
@@ -610,16 +859,82 @@ function delI(i){if(confirm('Delete this issue?')){D.ids.splice(i,1);save();rend
 
 // ── CONCLUDE ──────────────────────────────────────────────────────────────────
 function rConclude(){
-  const wk=curWeek(),rating=D.ratings[wk]||0;
-  const allR=Object.values(D.ratings),avg=allR.length?Math.round(allR.reduce((a,b)=>a+b,0)/allR.length*10)/10:0;
+  const wk=curWeek(),md=mData();
+  if(!md.weekRatings)md.weekRatings={};
+  if(!md.weekRatings[wk])md.weekRatings[wk]=[];
+  const wkRatings=md.weekRatings[wk];
+  const avg=wkRatings.length?Math.round(wkRatings.reduce((a,b)=>a+b.rating,0)/wkRatings.length*10)/10:null;
   const opts=[1,1.5,2,2.5,3,3.5,4];
-  const btns=opts.map(n=>`<button class="rtbtn ${rating===n?'sel':''}" onclick="setRating(${n})">${n}</button>`).join('');
-  return `<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-star"></i><div><div class="ctitle">${ST.navTabs[6]}</div><div class="csub">All-time avg: ${avg>0?avg+'/4':'No ratings yet'}</div></div></div><span class="tbadge">5 min</span></div>
-    <div style="padding:16px"><div style="font-size:13px;color:var(--t2);margin-bottom:12px">Rate this meeting (1 = poor · 4 = excellent)</div><div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px">${btns}</div>${rating?`<div style="font-size:13px;color:var(--t2)">This week: <strong style="color:${rating>=3.5?'var(--gr)':rating>=2.5?'var(--am)':'var(--re)'}">${rating}/4</strong></div>`:''}</div>
-    <div style="padding:0 16px 16px"><div style="font-size:13px;font-weight:700;color:var(--t);margin-bottom:10px">Wrap-up checklist</div>${['All to-dos assigned with owners & due dates','All IDS issues resolved or moved to to-do','Scorecard updated by all owners','Next meeting date confirmed'].map(item=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><input type="checkbox" style="width:15px;height:15px;accent-color:var(--o);cursor:pointer;flex-shrink:0"/><span style="font-size:13px">${item}</span></div>`).join('')}</div>
+  const dur=md.meetingDurations&&md.meetingDurations[wk]?fmtDuration(md.meetingDurations[wk]):null;
+
+  // Rating submission form
+  const memberOpts=curMeeting().members.map(p=>`<option value="${p}">${p}</option>`).join('');
+  const ratingForm=`
+    <div style="background:var(--bg2);border-radius:var(--rs);padding:14px;border:1px solid var(--bd);margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:10px">Submit your rating</div>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+        <select id="rating-person" style="font-size:12px;padding:5px 8px"><option value="">Select your name...</option>${memberOpts}</select>
+      </div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:8px">Your rating (1 = poor · 4 = excellent)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+        ${opts.map(n=>`<button class="rtbtn" id="rb-${n}" onclick="selectRating(${n})">${n}</button>`).join('')}
+      </div>
+      <input id="rating-note" placeholder="Why did you give this rating? (optional)" style="width:100%;font-size:12px;padding:6px 10px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--bg);color:var(--t);margin-bottom:10px"/>
+      <button class="bsav" onclick="submitRating()" style="font-size:12px;padding:6px 14px">Submit rating</button>
+    </div>`;
+
+  // Existing ratings
+  const ratList=wkRatings.length?wkRatings.map(r=>`
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd)">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:${r.note?'3px':'0'}">
+          <span style="font-size:12px;font-weight:700;color:var(--t)">${r.person}</span>
+          <span style="font-size:11px;padding:2px 8px;border-radius:4px;font-weight:700;background:${r.rating>=3.5?'var(--gr2)':r.rating>=2.5?'var(--am2)':'var(--re2)'};color:${r.rating>=3.5?'var(--gr)':r.rating>=2.5?'var(--am)':'var(--re)'}">${r.rating}/4</span>
+        </div>
+        ${r.note?`<div style="font-size:12px;color:var(--t2)">"${r.note}"</div>`:''}
+      </div>
+      <button class="rbtn" onclick="deleteRating('${r.person}')" title="Remove"><i class="ti ti-x" style="font-size:11px"></i></button>
+    </div>`).join(''):`<div style="font-size:13px;color:var(--t2);padding:8px 0">No ratings yet — be the first to submit!</div>`;
+
+  return `<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-star"></i><div><div class="ctitle">${ST.navTabs[6]}</div><div class="csub">${avg?'Team avg: '+avg+'/4':'No ratings yet'}${dur?' · Duration: '+dur:''}</div></div></div><span class="tbadge">5 min</span></div>
+    <div style="padding:14px">
+      ${ratingForm}
+      <div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:8px">Team ratings this week</div>
+      ${ratList}
+    </div>
+    <div style="padding:0 14px 14px;margin-top:8px">
+      <div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:10px;padding-top:10px;border-top:1px solid var(--bd)">Wrap-up checklist</div>
+      ${['All to-dos assigned with owners & due dates','All IDS issues resolved or moved to to-do','Scorecard updated by all owners','Next meeting date confirmed'].map(item=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><input type="checkbox" style="width:15px;height:15px;accent-color:var(--o);cursor:pointer;flex-shrink:0"/><span style="font-size:13px">${item}</span></div>`).join('')}
+    </div>
   </div>`;
 }
-function setRating(n){D.ratings[curWeek()]=n;save();render();}
+
+let selectedRating=null;
+function selectRating(n){
+  selectedRating=n;
+  [1,1.5,2,2.5,3,3.5,4].forEach(v=>{
+    const btn=document.getElementById('rb-'+v);
+    if(btn)btn.className='rtbtn'+(v===n?' sel':'');
+  });
+}
+function submitRating(){
+  const person=document.getElementById('rating-person')?.value;
+  const note=document.getElementById('rating-note')?.value.trim();
+  if(!person){alert('Please select your name');return;}
+  if(!selectedRating){alert('Please select a rating');return;}
+  const wk=curWeek(),md=mData();
+  if(!md.weekRatings)md.weekRatings={};
+  if(!md.weekRatings[wk])md.weekRatings[wk]=[];
+  md.weekRatings[wk]=md.weekRatings[wk].filter(r=>r.person!==person);
+  md.weekRatings[wk].push({person,rating:selectedRating,note:note||''});
+  selectedRating=null;
+  save();render();
+}
+function deleteRating(person){
+  const wk=curWeek(),md=mData();
+  if(md.weekRatings&&md.weekRatings[wk])md.weekRatings[wk]=md.weekRatings[wk].filter(r=>r.person!==person);
+  save();render();
+}
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
 function openModal(type){
@@ -644,8 +959,8 @@ function saveModal(){
   if(t==='hl'&&v('f1'))D.headlines.push({id:Date.now(),person:v('f1'),text:''});
   else if(t==='sc'&&v('f1')){const k=DEF_SC_KEYS[activeSCTab];D.scorecard[k].push({id:Date.now(),metric:v('f1'),owner:v('f2')||'—',goal:v('f3')||'1',freq:v('f4')||'Weekly',values:{}});}
   else if(t==='rock'&&v('f1'))D.rocks.push({id:Date.now(),rock:v('f1'),owner:v('f2')||'—',due:v('f3')||'—',status:'on'});
-  else if(t==='todo'&&v('f1')){const todo={id:Date.now(),task:v('f1'),owner:v('f2')||'—',due:v('f3')||curWeek(),status:'open'};D.todos.push(todo);if(msToken&&msPlanId)createPlannerTask(todo);}
-  else if(t==='ids'&&v('f1'))D.ids.push({id:Date.now(),issue:v('f1'),raisedBy:v('f2')||'—',priority:v('f3')||'med',notes:v('f4')||'',status:'open'});
+  else if(t==='todo'&&v('f1')){const md=mData();if(!md.todos)md.todos=[];const todo={id:Date.now(),task:v('f1'),owner:v('f2')||'—',due:v('f3')||curWeek(),status:'open',weekCreated:curWeek()};md.todos.push(todo);if(msToken&&msPlanId)createPlannerTask(todo);}
+  else if(t==='ids'&&v('f1')){const md=mData();if(!md.ids)md.ids=[];md.ids.push({id:Date.now(),issue:v('f1'),raisedBy:v('f2')||'—',priority:v('f3')||'med',notes:v('f4')||'',status:'open',weekCreated:curWeek()});}
   save();closeModal();render();
 }
 
