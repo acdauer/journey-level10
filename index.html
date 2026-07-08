@@ -143,7 +143,9 @@ select:focus{outline:none;border-color:var(--o)}
       </div>
     </div>
     <div class="hdr-r">
-      <div class="wpill" id="wk-label">Loading...</div>
+      <select id="wk-select" onchange="switchWeek(this.value)" style="font-size:12px;padding:5px 10px;border-radius:var(--rs);background:var(--o);color:#fff;font-weight:700;border:none;cursor:pointer;appearance:none;-webkit-appearance:none;min-width:100px;text-align:center">
+        <option>Loading...</option>
+      </select>
       <select id="meeting-type-select" onchange="switchMeetingType(this.value)" style="font-size:12px;padding:5px 10px;border-radius:var(--rs);border:2px solid var(--o);background:var(--bg);color:var(--o);font-weight:700;cursor:pointer">
         <option value="admin">Admin Sync</option>
         <option value="store">Store Sync</option>
@@ -346,6 +348,45 @@ function wkLabel(off){
 }
 function curWeek(){return D.weeks[D.wkIdx]||D.weeks[D.weeks.length-1];}
 function addWeek(){const n=wkLabel(D.weeks.length);if(!D.weeks.includes(n)){D.weeks.push(n);D.wkIdx=D.weeks.length-1;}save();render();}
+function switchWeek(wk){
+  const idx=D.weeks.indexOf(wk);
+  if(idx>=0){
+    D.wkIdx=idx;
+    render();
+    const isCurrent=idx===D.weeks.length-1;
+    const sel=document.getElementById('wk-select');
+    if(sel){
+      sel.style.background=isCurrent?'var(--o)':'var(--am)';
+      sel.style.color='#fff';
+      sel.title=isCurrent?'Current week — click to switch weeks':'Viewing past week — select current week to return to live mode';
+    }
+    // Show/hide past week banner
+    let banner=document.getElementById('past-week-banner');
+    if(!isCurrent){
+      if(!banner){
+        banner=document.createElement('div');
+        banner.id='past-week-banner';
+        banner.style.cssText='background:var(--am2);color:var(--am);border:1px solid #f0d49a;border-radius:var(--rs);padding:8px 14px;font-size:12px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px';
+        banner.innerHTML=`<span><i class="ti ti-eye" style="margin-right:6px"></i>Viewing past week — <strong>${wk}</strong>. Changes here will update this week's data.</span><button onclick="jumpToCurrentWeek()" style="font-size:11px;padding:3px 10px;border-radius:var(--rs);border:none;background:var(--am);color:#fff;cursor:pointer;font-weight:700">Back to current week</button>`;
+        const sgrid=document.getElementById('sgrid');
+        if(sgrid)sgrid.parentNode.insertBefore(banner,sgrid);
+      }
+    } else {
+      if(banner)banner.remove();
+    }
+  }
+}
+function jumpToCurrentWeek(){
+  D.wkIdx=D.weeks.length-1;
+  const sel=document.getElementById('wk-select');
+  if(sel){
+    sel.value=D.weeks[D.wkIdx];
+    sel.style.background='var(--o)';
+  }
+  const banner=document.getElementById('past-week-banner');
+  if(banner)banner.remove();
+  render();
+}
 
 // Get current meeting's data safely
 function mData(){
@@ -584,6 +625,8 @@ function toggleTimer(){
     if(!md.meetingDurations)md.meetingDurations={};
     md.meetingDurations[curWeek()]=timerElapsed;
     save();
+    // Make sure we're viewing current week after stopping
+    D.wkIdx=D.weeks.length-1;
     const btn=document.getElementById('timer-btn');
     if(btn){btn.innerHTML='<i class="ti ti-player-play"></i> Start';btn.style.borderColor='var(--gr)';btn.style.color='var(--gr)';}
     // Prompt to send summary email
@@ -920,7 +963,10 @@ async function sendSummaryEmail(){
 function render(){
   // Summary
   const wk=curWeek();
-  const el=document.getElementById('wk-label');if(el)el.textContent=wk;
+  const sel=document.getElementById('wk-select');
+  if(sel){
+    sel.innerHTML=[...D.weeks].reverse().map(w=>`<option value="${w}" ${w===wk?'selected':''}>${w}</option>`).join('');
+  }
   const md=mData();
   const mtScKeys=curMeeting().scKeys;
   const allSC=mtScKeys.map(k=>D.scorecard[k]||[]).flat();
