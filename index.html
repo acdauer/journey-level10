@@ -1105,24 +1105,122 @@ function delR(i){if(confirm('Delete this rock?')){D.rocks.splice(i,1);save();ren
 function rTodos(){
   const md=mData();
   if(!md.todos)md.todos=[];
-  const open=md.todos.filter(t=>t.status==='open'),done=md.todos.filter(t=>t.status==='done'),carry=md.todos.filter(t=>t.status==='carry');
-  function tr(t){
+  const open=md.todos.filter(t=>t.status==='open');
+  const carry=md.todos.filter(t=>t.status==='carry');
+  const done=md.todos.filter(t=>t.status==='done');
+  const dropped=md.todos.filter(t=>t.status==='dropped');
+
+  function tr(t,editable=true){
     const i=md.todos.indexOf(t);
-    return `<div class="cw"><input type="checkbox" ${t.status==='done'?'checked':''} onchange="togT(${i})" style="width:16px;height:16px;accent-color:var(--o);cursor:pointer;flex-shrink:0;margin-top:2px"/><div style="flex:1"><div style="display:flex;align-items:center;gap:6px"><input class="ie" value="${t.task}" style="${t.status==='done'?'text-decoration:line-through;color:var(--t2)':''}" onchange="updTF(${i},'task',this.value)"/>${t.plannerSynced?'<span class="ptag">✓ Planner</span>':''}</div><div style="display:flex;gap:6px;align-items:center;margin-top:3px;flex-wrap:wrap"><span style="font-size:11px;color:var(--t2)">Owner:</span><input class="ie" value="${t.owner}" style="font-size:11px;color:var(--t2);width:110px" onchange="updTF(${i},'owner',this.value)"/><span style="font-size:11px;color:var(--t2)">Due:</span><input class="ie" value="${t.due}" style="font-size:11px;color:var(--t2);width:80px" onchange="updTF(${i},'due',this.value)"/></div></div><select onchange="updTS(${i},this.value)"><option value="open" ${t.status==='open'?'selected':''}>Open</option><option value="done" ${t.status==='done'?'selected':''}>Done</option><option value="carry" ${t.status==='carry'?'selected':''}>Carry over</option><option value="dropped" ${t.status==='dropped'?'selected':''}>Dropped</option></select><button class="rbtn" onclick="delT(${i})"><i class="ti ti-trash" style="font-size:12px"></i></button></div>`;
+    const isDone=t.status==='done'||t.status==='dropped';
+    const statusColor={open:'var(--o)',done:'var(--gr)',carry:'var(--am)',dropped:'var(--t2)'};
+    const statusIcon={open:'ti-circle',done:'ti-circle-check',carry:'ti-refresh',dropped:'ti-x'};
+
+    if(!editable){
+      // Collapsed read-only view for done/dropped
+      return `<div style="display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid var(--bd);opacity:0.8">
+        <i class="ti ${statusIcon[t.status]}" style="color:${statusColor[t.status]};font-size:15px;flex-shrink:0"></i>
+        <span style="font-size:12px;color:var(--t);flex:1;${isDone?'text-decoration:line-through;color:var(--t2)':''}">${t.task}</span>
+        <span style="font-size:11px;color:var(--t2)">→ ${t.owner}</span>
+        <button onclick="reopenTodo(${i})" style="font-size:10px;padding:2px 7px;border-radius:var(--rs);border:1px solid var(--bd);color:var(--t2);background:none;cursor:pointer">Reopen</button>
+        <button onclick="delT(${i})" style="background:none;border:none;cursor:pointer;color:var(--t2);padding:2px 4px"><i class="ti ti-x" style="font-size:11px"></i></button>
+      </div>`;
+    }
+
+    return `<div style="background:var(--bg);border:1px solid var(--bd);border-radius:var(--rs);padding:10px 14px;margin-bottom:8px">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <input type="checkbox" ${t.status==='done'?'checked':''} onchange="togT(${i})"
+          style="width:16px;height:16px;accent-color:var(--o);cursor:pointer;flex-shrink:0;margin-top:3px"/>
+        <div style="flex:1">
+          <input class="ie" value="${t.task}"
+            style="font-size:13px;font-weight:600;width:100%;margin-bottom:6px;${isDone?'text-decoration:line-through;color:var(--t2)':''}"
+            onchange="updTF(${i},'task',this.value)"
+            placeholder="Task description"/>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:11px;color:var(--t2)">Owner:</span>
+              <input class="ie" value="${t.owner}" style="font-size:11px;color:var(--t2);width:90px"
+                onchange="updTF(${i},'owner',this.value)"/>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:11px;color:var(--t2)">Due:</span>
+              <input class="ie" value="${t.due}" style="font-size:11px;color:var(--t2);width:70px"
+                onchange="updTF(${i},'due',this.value)"/>
+            </div>
+            ${t.plannerSynced?'<span class="ptag">✓ Planner</span>':''}
+            <div style="margin-left:auto;display:flex;gap:4px">
+              <select onchange="updTS(${i},this.value)"
+                style="font-size:11px;padding:2px 6px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--bg2);color:var(--t);cursor:pointer">
+                <option value="open" ${t.status==='open'?'selected':''}>Open</option>
+                <option value="done" ${t.status==='done'?'selected':''}>Done</option>
+                <option value="carry" ${t.status==='carry'?'selected':''}>Carry over</option>
+                <option value="dropped" ${t.status==='dropped'?'selected':''}>Dropped</option>
+              </select>
+              <button onclick="delT(${i})" style="font-size:11px;padding:2px 6px;border-radius:var(--rs);border:1px solid var(--bd);color:var(--t2);background:none;cursor:pointer"><i class="ti ti-trash"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
   }
-  const note=msToken&&msPlanId?`<div class="notice gn"><i class="ti ti-brand-microsoft"></i> New to-dos sync to Microsoft Planner & To Do automatically</div>`:`<div class="notice am"><i class="ti ti-brand-microsoft"></i> Sign in to auto-sync tasks to Planner & To Do</div>`;
-  let h=`<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-checkbox"></i><div><div class="ctitle">${ST.navTabs[4]}</div><div class="csub">${open.length} open · ${done.length} done · ${carry.length} carried over</div></div></div><span class="tbadge">5 min</span></div>${note}`;
-  if(!D.todos.length)h+=`<div style="padding:2rem;text-align:center;color:var(--t2);font-size:13px">No to-dos yet</div>`;
-  else{if(open.length)h+=open.map(tr).join('');if(carry.length)h+=`<div style="padding:5px 15px;font-size:11px;color:var(--t2);background:var(--bg2);border-top:1px solid var(--bd)">Carried over</div>`+carry.map(tr).join('');if(done.length)h+=`<div style="padding:5px 15px;font-size:11px;color:var(--t2);background:var(--bg2);border-top:1px solid var(--bd)">Completed</div>`+done.map(tr).join('');}
-  h+=`<button class="addbtn" onclick="openModal('todo')"><i class="ti ti-plus"></i> Add to-do</button></div>`;
+
+  const syncNote=msToken&&msPlanId
+    ?`<div class="notice gn"><i class="ti ti-brand-microsoft"></i> New to-dos sync to Microsoft Planner & To Do automatically</div>`
+    :`<div class="notice am"><i class="ti ti-brand-microsoft"></i> Sign in to auto-sync tasks to Planner & To Do</div>`;
+
+  let h=`<div class="card">
+    <div class="chdr">
+      <div class="chl"><i class="ti ti-checkbox"></i>
+        <div>
+          <div class="ctitle">${ST.navTabs[4]}</div>
+          <div class="csub">${open.length} open · ${carry.length} carry over · ${done.length} done</div>
+        </div>
+      </div>
+      <span class="tbadge">5 min</span>
+    </div>
+    ${syncNote}
+    <div style="padding:12px 14px">`;
+
+  if(!md.todos.length){
+    h+=`<div style="padding:1.5rem;text-align:center;color:var(--t2);font-size:13px">No to-dos yet — add one below</div>`;
+  } else {
+    // Open items — fully editable cards
+    if(open.length){
+      h+=`<div style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Open</div>`;
+      h+=open.map(t=>tr(t,true)).join('');
+    }
+    // Carry over — fully editable cards
+    if(carry.length){
+      h+=`<div style="font-size:11px;font-weight:700;color:var(--am);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px;padding-top:8px;border-top:1px solid var(--bd)">Carried over</div>`;
+      h+=carry.map(t=>tr(t,true)).join('');
+    }
+    // Done — collapsed read-only rows
+    if(done.length||dropped.length){
+      h+=`<div style="font-size:11px;font-weight:700;color:var(--gr);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 6px;padding-top:8px;border-top:1px solid var(--bd)">Completed / Dropped</div>`;
+      h+=done.map(t=>tr(t,false)).join('');
+      h+=dropped.map(t=>tr(t,false)).join('');
+    }
+  }
+
+  h+=`</div>
+    <div class="ehint"><i class="ti ti-pencil" style="color:var(--o)"></i> Click any task name, owner, or due date to edit directly</div>
+    <button class="addbtn" onclick="openModal('todo')"><i class="ti ti-plus"></i> Add to-do</button>
+  </div>`;
   return h;
 }
-function togT(i){const md=mData();md.todos[i].status=md.todos[i].status==='done'?'open':'done';if(md.todos[i].status==='done'&&md.todos[i].plannerId)completePlannerTask(md.todos[i].plannerId);save();render();}
+
+function togT(i){
+  const md=mData();
+  md.todos[i].status=md.todos[i].status==='done'?'open':'done';
+  if(md.todos[i].status==='done'&&md.todos[i].plannerId)completePlannerTask(md.todos[i].plannerId);
+  save();render();
+}
+function reopenTodo(i){const md=mData();md.todos[i].status='open';save();render();}
 function updTF(i,f,v){const md=mData();md.todos[i][f]=v;save();}
 function updTS(i,v){const md=mData();md.todos[i].status=v;save();render();}
 function delT(i){if(confirm('Delete this to-do?')){const md=mData();md.todos.splice(i,1);save();render();}}
 
-// ── IDS ───────────────────────────────────────────────────────────────────────
+
 function rIDS(){
   const md=mData();
   if(!md.ids)md.ids=[];
