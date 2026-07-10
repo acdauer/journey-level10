@@ -389,6 +389,38 @@ function jumpToCurrentWeek(){
 }
 
 // Get current meeting's data safely
+// Migrate legacy root-level data into meetings structure
+function migrateLegacyData(){
+  if(!D.meetings)D.meetings={
+    admin:{headlines:[],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}},
+    store:{headlines:[],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}}
+  };
+  // If root D.ids has items and meetings.admin.ids is empty, migrate them
+  if(D.ids&&D.ids.length&&(!D.meetings.admin.ids||!D.meetings.admin.ids.length)){
+    D.meetings.admin.ids=[...D.ids];
+    D.ids=[];
+    console.log('Migrated legacy ids to admin meeting');
+  }
+  // Same for todos
+  if(D.todos&&D.todos.length&&(!D.meetings.admin.todos||!D.meetings.admin.todos.length)){
+    D.meetings.admin.todos=[...D.todos];
+    D.todos=[];
+    console.log('Migrated legacy todos to admin meeting');
+  }
+  // Same for weekRatings
+  if(D.weekRatings&&Object.keys(D.weekRatings).length&&(!D.meetings.admin.weekRatings||!Object.keys(D.meetings.admin.weekRatings).length)){
+    D.meetings.admin.weekRatings={...D.weekRatings};
+    D.weekRatings={};
+    console.log('Migrated legacy weekRatings to admin meeting');
+  }
+  // Same for meetingDurations
+  if(D.meetingDurations&&Object.keys(D.meetingDurations).length&&(!D.meetings.admin.meetingDurations||!Object.keys(D.meetings.admin.meetingDurations).length)){
+    D.meetings.admin.meetingDurations={...D.meetingDurations};
+    D.meetingDurations={};
+    console.log('Migrated legacy meetingDurations to admin meeting');
+  }
+}
+
 function mData(){
   if(!D.meetings)D.meetings={admin:{headlines:[],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}},store:{headlines:[],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}}};
   if(!D.meetings[activeMeetingType])D.meetings[activeMeetingType]={headlines:[],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}};
@@ -398,10 +430,17 @@ function curMeeting(){return MEETING_TYPES[activeMeetingType];}
 function switchMeetingType(type){
   activeMeetingType=type;
   activeSCTab=0;
+  dragSrcIdx=null;
   // Reset timer for new meeting context
   if(timerRunning)toggleTimer();
   timerElapsed=0;selectedRating=null;
   updateTimerDisplay();
+  // Ensure meeting data structure exists
+  if(!D.meetings)D.meetings={};
+  if(!D.meetings[type])D.meetings[type]={headlines:[],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}};
+  // Update meeting type dropdown
+  const sel=document.getElementById('meeting-type-select');
+  if(sel)sel.value=type;
   render();
 }
 
@@ -501,6 +540,8 @@ async function loadSP(force=false){
               saveSettings2(ST);
               applySettings();
             }
+            // Migrate any root-level ids/todos into meetings structure
+            migrateLegacyData();
             saveLocal();
             console.log('Loaded shared data from SharePoint ✅');
             return true;
@@ -1364,6 +1405,7 @@ function resetSettings(){if(!confirm('Reset all labels to defaults?'))return;ST=
 
 // ── STARTUP ───────────────────────────────────────────────────────────────────
 applySettings();
+migrateLegacyData();
 render();
 // Handle auth redirect token in URL hash
 const _hash=location.hash;
