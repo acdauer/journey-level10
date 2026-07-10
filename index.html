@@ -1085,27 +1085,153 @@ function delT(i){if(confirm('Delete this to-do?')){const md=mData();md.todos.spl
 function rIDS(){
   const md=mData();
   if(!md.ids)md.ids=[];
-  const open=md.ids.filter(x=>x.status==='open'),solved=md.ids.filter(x=>x.status==='solved');
-  const pc={high:'hi',med:'me',low:'lo'};
-  function ir(x){
+  const open=md.ids.filter(x=>x.status==='open');
+  const solved=md.ids.filter(x=>x.status==='solved');
+
+  function irOpen(x){
     const i=md.ids.indexOf(x);
-    return `<div class="cw"><div style="flex:1"><div style="display:flex;align-items:center;gap:7px;margin-bottom:4px"><span class="iph ${pc[x.priority]||'me'}">${x.priority||'med'}</span><input class="ie" value="${x.issue}" style="font-weight:700;font-size:13px" onchange="updIF(${i},'issue',this.value)"/></div>${x.notes?`<div style="font-size:11px;color:var(--t2);margin-bottom:3px">${x.notes}</div>`:''}<div style="font-size:11px;color:var(--t2);display:flex;gap:6px;align-items:center">Raised by:<input class="ie" value="${x.raisedBy}" style="font-size:11px;color:var(--t2);width:110px" onchange="updIF(${i},'raisedBy',this.value)"/></div></div><select onchange="updIS(${i},this.value)"><option value="open" ${x.status==='open'?'selected':''}>Open</option><option value="solved" ${x.status==='solved'?'selected':''}>Solved</option><option value="todo">Move to to-do</option></select><button class="rbtn" onclick="delI(${i})"><i class="ti ti-trash" style="font-size:12px"></i></button></div>`;
+    const pc={high:'hi',med:'me',low:'lo'};
+    return `<div class="ids-row" draggable="true" data-idx="${i}"
+      ondragstart="idsDragStart(event,${i})"
+      ondragover="idsDragOver(event)"
+      ondrop="idsDrop(event,${i})"
+      ondragend="idsDragEnd(event)"
+      style="background:var(--bg);border:1px solid var(--bd);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px;cursor:grab">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <i class="ti ti-grip-vertical" style="color:var(--t2);font-size:16px;margin-top:2px;flex-shrink:0;cursor:grab"></i>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap">
+            <span class="iph ${pc[x.priority]||'me'}">${x.priority||'med'}</span>
+            <input class="ie" value="${x.issue}" style="font-weight:700;font-size:13px;flex:1;min-width:120px" onchange="updIF(${i},'issue',this.value)"/>
+          </div>
+          <div style="font-size:11px;color:var(--t2);margin-bottom:8px">Raised by:
+            <input class="ie" value="${x.raisedBy}" style="font-size:11px;color:var(--t2);width:100px" onchange="updIF(${i},'raisedBy',this.value)"/>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button onclick="idsAddAction(${i})" style="font-size:11px;padding:4px 10px;border-radius:var(--rs);border:1px solid var(--o);color:var(--o);background:none;cursor:pointer;font-weight:700;display:flex;align-items:center;gap:4px"><i class="ti ti-checkbox"></i> Make action</button>
+            <button onclick="idsComplete(${i})" style="font-size:11px;padding:4px 10px;border-radius:var(--rs);border:1px solid var(--gr);color:var(--gr);background:none;cursor:pointer;font-weight:700;display:flex;align-items:center;gap:4px"><i class="ti ti-check"></i> Complete</button>
+            <button onclick="delI(${i})" style="font-size:11px;padding:4px 10px;border-radius:var(--rs);border:1px solid var(--bd);color:var(--t2);background:none;cursor:pointer;display:flex;align-items:center;gap:4px"><i class="ti ti-trash"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>`;
   }
-  let h=`<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-flame"></i><div><div class="ctitle">${ST.navTabs[5]}</div><div class="csub">${open.length} open issue${open.length!==1?'s':''}</div></div></div><span class="tbadge">60 min</span></div>`;
-  if(!D.ids.length)h+=`<div style="padding:2rem;text-align:center;color:var(--t2);font-size:13px">No issues this week!</div>`;
-  else{if(open.length)h+=open.map(ir).join('');if(solved.length)h+=`<div style="padding:5px 15px;font-size:11px;color:var(--t2);background:var(--bg2);border-top:1px solid var(--bd)">Solved</div>`+solved.map(ir).join('');}
-  h+=`<button class="addbtn" onclick="openModal('ids')"><i class="ti ti-plus"></i> Add issue</button></div>`;
-  return h;
+
+  function irSolved(x){
+    const i=md.ids.indexOf(x);
+    return `<details style="margin-bottom:6px;border:1px solid var(--bd);border-radius:var(--rs);overflow:hidden">
+      <summary style="padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;background:var(--bg2);list-style:none;font-size:12px">
+        <i class="ti ti-check" style="color:var(--gr);font-size:13px"></i>
+        <span style="font-weight:700;color:var(--t);flex:1">${x.issue}</span>
+        <span style="font-size:11px;color:var(--t2)">Resolved · ${x.raisedBy}</span>
+      </summary>
+      <div style="padding:10px 14px;font-size:12px">
+        ${x.outcome?`<div style="color:var(--t);margin-bottom:6px"><strong style="color:var(--gr)">Outcome:</strong> ${x.outcome}</div>`:'<div style="color:var(--t2)">No outcome note recorded</div>'}
+        <button onclick="delI(${i})" style="font-size:11px;padding:3px 8px;border-radius:var(--rs);border:1px solid var(--bd);color:var(--t2);background:none;cursor:pointer;margin-top:6px"><i class="ti ti-trash"></i> Remove</button>
+      </div>
+    </details>`;
+  }
+
+  let openHtml = open.length
+    ? open.map(irOpen).join('')
+    : `<div style="padding:2rem;text-align:center;color:var(--t2);font-size:13px">No open issues — great week!</div>`;
+
+  let solvedHtml = solved.length
+    ? `<div style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px;padding-top:10px;border-top:1px solid var(--bd)">Resolved this meeting</div>`
+      + solved.map(irSolved).join('')
+    : '';
+
+  return `<div class="card">
+    <div class="chdr">
+      <div class="chl"><i class="ti ti-flame"></i>
+        <div>
+          <div class="ctitle">${ST.navTabs[5]}</div>
+          <div class="csub">${open.length} open · ${solved.length} resolved · drag to reorder</div>
+        </div>
+      </div>
+      <span class="tbadge">60 min</span>
+    </div>
+    <div style="padding:12px 14px">
+      ${openHtml}
+      ${solvedHtml}
+    </div>
+    <button class="addbtn" onclick="openModal('ids')"><i class="ti ti-plus"></i> Add issue</button>
+  </div>`;
 }
-function updIF(i,f,v){D.ids[i][f]=v;save();}
-function updIS(i,v){
-  if(v==='todo'){const t={id:Date.now(),task:D.ids[i].issue,owner:D.ids[i].raisedBy,due:curWeek(),status:'open'};D.todos.push(t);D.ids[i].status='solved';if(msToken&&msPlanId)createPlannerTask(t);}
-  else D.ids[i].status=v;
+
+// ── IDS DRAG AND DROP ─────────────────────────────────────────────────────────
+let dragSrcIdx=null;
+function idsDragStart(e,i){
+  dragSrcIdx=i;
+  e.dataTransfer.effectAllowed='move';
+  e.currentTarget.style.opacity='0.5';
+}
+function idsDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='move';}
+function idsDrop(e,targetIdx){
+  e.preventDefault();
+  if(dragSrcIdx===null||dragSrcIdx===targetIdx)return;
+  const md=mData();
+  const moved=md.ids.splice(dragSrcIdx,1)[0];
+  md.ids.splice(targetIdx,0,moved);
+  dragSrcIdx=null;
   save();render();
 }
-function delI(i){if(confirm('Delete this issue?')){D.ids.splice(i,1);save();render();}}
+function idsDragEnd(e){e.currentTarget.style.opacity='1';dragSrcIdx=null;}
 
-// ── CONCLUDE ──────────────────────────────────────────────────────────────────
+// ── IDS COMPLETE WITH OUTCOME NOTE ───────────────────────────────────────────
+function idsComplete(i){
+  const md=mData();
+  const issue=md.ids[i];
+  // Show outcome prompt overlay
+  const overlay=document.createElement('div');
+  overlay.id='ids-complete-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML=`
+    <div style="background:var(--bg);border-radius:var(--r);border:1px solid var(--bd);padding:1.5rem;width:420px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem">
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--gr);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-check" style="color:#fff;font-size:17px"></i></div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--t)">Resolve issue</div>
+          <div style="font-size:12px;color:var(--t2);margin-top:1px">${issue.issue}</div>
+        </div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Outcome / notes</div>
+      <textarea id="ids-outcome-input" placeholder="What was decided or resolved? (optional)" style="width:100%;font-size:13px;padding:8px 10px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--bg);color:var(--t);resize:vertical;min-height:80px;margin-bottom:14px"></textarea>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button onclick="document.getElementById('ids-complete-overlay').remove()" style="font-size:13px;padding:7px 14px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--bg);color:var(--t);cursor:pointer">Cancel</button>
+        <button onclick="idsConfirmComplete(${i})" style="font-size:13px;padding:7px 14px;border-radius:var(--rs);border:none;background:var(--gr);color:#fff;cursor:pointer;font-weight:700"><i class="ti ti-check"></i> Mark resolved</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(()=>document.getElementById('ids-outcome-input')?.focus(),50);
+}
+function idsConfirmComplete(i){
+  const md=mData();
+  const outcome=document.getElementById('ids-outcome-input')?.value.trim()||'';
+  md.ids[i].status='solved';
+  md.ids[i].outcome=outcome;
+  document.getElementById('ids-complete-overlay')?.remove();
+  save();render();
+}
+
+// ── IDS → MAKE ACTION (TO-DO) ────────────────────────────────────────────────
+function idsAddAction(i){
+  const md=mData();
+  const issue=md.ids[i];
+  // Pre-fill the todo modal with issue details
+  modalCtx='todo';
+  document.getElementById('mtitle').textContent='Create action from issue';
+  const memberOpts=curMeeting().members.map(p=>`<option value="${p}">${p}</option>`).join('');
+  document.getElementById('mfields').innerHTML=`
+    <div class="fld"><label>Task</label><input id="f1" value="${issue.issue}"/></div>
+    <div class="fld"><label>Assign to</label><select id="f2">${memberOpts}</select></div>
+    <div class="fld"><label>Due date</label><input id="f3" placeholder="e.g. Jul 14"/></div>
+    ${msToken&&msPlanId?`<div style="font-size:11px;color:var(--gr);padding:4px 0;display:flex;align-items:center;gap:5px"><i class="ti ti-brand-microsoft"></i> Will sync to Planner & To Do automatically</div>`:''}`;
+  document.getElementById('modal').classList.add('open');
+  setTimeout(()=>document.getElementById('f1')?.focus(),50);
+}
+
+
 function rConclude(){
   const wk=curWeek(),md=mData();
   if(!md.weekRatings)md.weekRatings={};
