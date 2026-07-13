@@ -347,7 +347,33 @@ function wkLabel(off){
   return 'Wk '+m.toLocaleDateString('en-US',{month:'short',day:'numeric'});
 }
 function curWeek(){return D.weeks[D.wkIdx]||D.weeks[D.weeks.length-1];}
-function addWeek(){const n=wkLabel(D.weeks.length);if(!D.weeks.includes(n)){D.weeks.push(n);D.wkIdx=D.weeks.length-1;}save();render();}
+function addWeek(){
+  // Always add exactly 7 days after the last stored week
+  // Parse the last week's date and add 7 days
+  let nextDate;
+  if(D.weeks.length>0){
+    const last=D.weeks[D.weeks.length-1];
+    // Parse "Wk Mon DD" or "Wk Mon D" format
+    const parts=last.replace('Wk ','').split(' ');
+    const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    const yr=new Date().getFullYear();
+    const parsed=new Date(yr,months[parts[0]],parseInt(parts[1]));
+    // If parsed date is in the past by more than 6 months, try next year
+    if(!isNaN(parsed.getTime())){
+      parsed.setDate(parsed.getDate()+7);
+      nextDate=parsed;
+    }
+  }
+  if(!nextDate){
+    // Fallback: next Monday from today
+    const d=new Date(),day=d.getDay(),m=new Date(d);
+    m.setDate(d.getDate()-(day===0?6:day-1)+7);
+    nextDate=m;
+  }
+  const n='Wk '+nextDate.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  if(!D.weeks.includes(n)){D.weeks.push(n);D.wkIdx=D.weeks.length-1;}
+  save();render();
+}
 function switchWeek(wk){
   const idx=D.weeks.indexOf(wk);
   if(idx>=0){
@@ -1136,6 +1162,11 @@ function rTodos(){
             style="font-size:13px;font-weight:600;width:100%;margin-bottom:6px;${isDone?'text-decoration:line-through;color:var(--t2)':''}"
             onchange="updTF(${i},'task',this.value)"
             placeholder="Task description"/>
+          ${t.notes||!isDone?`<div style="margin-bottom:6px">
+            ${t.notes?`<div style="font-size:11px;color:var(--t2);margin-bottom:3px;display:flex;align-items:center;gap:4px"><i class="ti ti-notes" style="font-size:12px;color:var(--o)"></i> Notes</div>
+            <textarea class="ie" style="font-size:12px;color:var(--t2);width:100%;resize:vertical;min-height:48px;padding:4px 6px;border:1px dashed var(--bd);border-radius:4px;background:var(--bg2)" onchange="updTF(${i},'notes',this.value)" placeholder="Add notes...">${t.notes}</textarea>`
+            :`<button onclick="toggleTodoNotes(${i})" style="font-size:11px;padding:2px 8px;border-radius:var(--rs);border:1px dashed var(--bd);color:var(--t2);background:none;cursor:pointer;display:flex;align-items:center;gap:4px"><i class="ti ti-notes"></i> Add notes</button>`}
+          </div>`:''}
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <div style="display:flex;align-items:center;gap:4px">
               <span style="font-size:11px;color:var(--t2)">Owner:</span>
@@ -1216,6 +1247,7 @@ function togT(i){
   save();render();
 }
 function reopenTodo(i){const md=mData();md.todos[i].status='open';save();render();}
+function toggleTodoNotes(i){const md=mData();md.todos[i].notes=md.todos[i].notes||' ';save();render();}
 function updTF(i,f,v){const md=mData();md.todos[i][f]=v;save();}
 function updTS(i,v){const md=mData();md.todos[i].status=v;save();render();}
 function delT(i){if(confirm('Delete this to-do?')){const md=mData();md.todos.splice(i,1);save();render();}}
@@ -1458,7 +1490,7 @@ function openModal(type){
   if(type==='hl')f=`<div class="fld"><label>Person name</label><input id="f1" placeholder="e.g. Store Manager"/></div>`;
   if(type==='sc')f=`<div class="fld"><label>Metric name</label><input id="f1" placeholder="e.g. Oil changes"/></div><div class="fld"><label>Owner</label><input id="f2" placeholder="e.g. Andy"/></div><div class="fld"><label>Weekly goal</label><input id="f3" type="number" placeholder="e.g. 4"/></div><div class="fld"><label>Frequency note (optional)</label><input id="f4" placeholder="e.g. 2-4/month"/></div>`;
   if(type==='rock')f=`<div class="fld"><label>Rock description</label><input id="f1" placeholder="e.g. Launch training program"/></div><div class="fld"><label>Owner</label><input id="f2" placeholder="e.g. Andy"/></div><div class="fld"><label>Due date</label><input id="f3" placeholder="e.g. Sep 30, 2026"/></div>`;
-  if(type==='todo')f=`<div class="fld"><label>Task</label><input id="f1" placeholder="e.g. Update handbook"/></div>${memberSelect('','f2')}<div class="fld"><label>Due date</label><input id="f3" placeholder="e.g. Jun 30"/></div>${msToken&&msPlanId?`<div style="font-size:11px;color:var(--gr);padding:4px 0;display:flex;align-items:center;gap:5px"><i class="ti ti-brand-microsoft"></i> Will sync to Planner & To Do automatically</div>`:''}`;
+  if(type==='todo')f=`<div class="fld"><label>Task</label><input id="f1" placeholder="e.g. Update handbook"/></div>${memberSelect('','f2')}<div class="fld"><label>Due date</label><input id="f3" placeholder="e.g. Jul 14"/></div><div class="fld"><label>Notes (optional)</label><textarea id="f4" placeholder="Add context, details, or background..." style="min-height:72px;resize:vertical"></textarea></div>${msToken&&msPlanId?`<div style="font-size:11px;color:var(--gr);padding:4px 0;display:flex;align-items:center;gap:5px"><i class="ti ti-brand-microsoft"></i> Will sync to Planner & To Do automatically</div>`:''}`;
   if(type==='ids')f=`<div class="fld"><label>Issue</label><input id="f1" placeholder="Describe the issue"/></div><div class="fld"><label>Raised by</label><input id="f2" placeholder="e.g. Andy"/></div><div class="fld"><label>Priority</label><select id="f3"><option value="high">High</option><option value="med" selected>Medium</option><option value="low">Low</option></select></div><div class="fld"><label>Notes (optional)</label><textarea id="f4" placeholder="Additional context..."></textarea></div>`;
   document.getElementById('mfields').innerHTML=f;
   document.getElementById('modal').classList.add('open');
@@ -1472,7 +1504,7 @@ function saveModal(){
   if(t==='hl'&&v('f1'))D.headlines.push({id:Date.now(),person:v('f1'),text:''});
   else if(t==='sc'&&v('f1')){const k=DEF_SC_KEYS[activeSCTab];D.scorecard[k].push({id:Date.now(),metric:v('f1'),owner:v('f2')||'—',goal:v('f3')||'1',freq:v('f4')||'Weekly',values:{}});}
   else if(t==='rock'&&v('f1'))D.rocks.push({id:Date.now(),rock:v('f1'),owner:v('f2')||'—',due:v('f3')||'—',status:'on'});
-  else if(t==='todo'&&v('f1')){const md=mData();if(!md.todos)md.todos=[];const todo={id:Date.now(),task:v('f1'),owner:v('f2')||'—',due:v('f3')||curWeek(),status:'open',weekCreated:curWeek()};md.todos.push(todo);if(msToken&&msPlanId)createPlannerTask(todo);}
+  else if(t==='todo'&&v('f1')){const md=mData();if(!md.todos)md.todos=[];const todo={id:Date.now(),task:v('f1'),owner:v('f2')||'—',due:v('f3')||curWeek(),notes:v('f4')||'',status:'open',weekCreated:curWeek()};md.todos.push(todo);if(msToken&&msPlanId)createPlannerTask(todo);}
   else if(t==='ids'&&v('f1')){const md=mData();if(!md.ids)md.ids=[];md.ids.push({id:Date.now(),issue:v('f1'),raisedBy:v('f2')||'—',priority:v('f3')||'med',notes:v('f4')||'',status:'open',weekCreated:curWeek()});}
   save();closeModal();render();
 }
