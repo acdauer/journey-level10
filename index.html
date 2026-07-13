@@ -332,7 +332,16 @@ function defData(){return{
   },
   ratings:{},weekRatings:{},meetingDurations:{} // legacy
 };}
-function loadLocal(){try{const r=localStorage.getItem('jl10_data');if(r)return JSON.parse(r);}catch(e){}return defData();}
+function loadLocal(){
+  try{
+    const r=localStorage.getItem('jl10_data');
+    if(r){
+      const d=JSON.parse(r);
+      return d;
+    }
+  }catch(e){}
+  return defData();
+}
 function saveLocal(){try{localStorage.setItem('jl10_data',JSON.stringify(D));}catch(e){}}
 let D=loadLocal();
 
@@ -342,8 +351,15 @@ function save(){
 }
 
 function wkLabel(off){
+  // Always anchor to THIS Monday regardless of offset
   const d=new Date(),day=d.getDay(),m=new Date(d);
-  m.setDate(d.getDate()-(day===0?6:day-1)+off*7);
+  m.setDate(d.getDate()-(day===0?6:day-1)+(off*7));
+  return 'Wk '+m.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function thisMonday(){
+  const d=new Date(),day=d.getDay(),m=new Date(d);
+  m.setDate(d.getDate()-(day===0?6:day-1));
+  m.setHours(0,0,0,0);
   return 'Wk '+m.toLocaleDateString('en-US',{month:'short',day:'numeric'});
 }
 function curWeek(){return D.weeks[D.wkIdx]||D.weeks[D.weeks.length-1];}
@@ -568,6 +584,7 @@ async function loadSP(force=false){
             }
             // Migrate any root-level ids/todos into meetings structure
             migrateLegacyData();
+            fixWeeks();
             saveLocal();
             console.log('Loaded shared data from SharePoint ✅');
             return true;
@@ -1248,6 +1265,7 @@ function togT(i){
 }
 function reopenTodo(i){const md=mData();md.todos[i].status='open';save();render();}
 function toggleTodoNotes(i){const md=mData();md.todos[i].notes=md.todos[i].notes||' ';save();render();}
+function toggleIdsNotes(i){const md=mData();md.ids[i].notes=md.ids[i].notes||' ';save();render();}
 function updTF(i,f,v){const md=mData();md.todos[i][f]=v;save();}
 function updTS(i,v){const md=mData();md.todos[i].status=v;save();render();}
 function delT(i){if(confirm('Delete this to-do?')){const md=mData();md.todos.splice(i,1);save();render();}}
@@ -1278,6 +1296,11 @@ function rIDS(){
           <div style="font-size:11px;color:var(--t2);margin-bottom:8px">Raised by:
             <input class="ie" value="${x.raisedBy}" style="font-size:11px;color:var(--t2);width:100px" onchange="updIF(${i},'raisedBy',this.value)"/>
           </div>
+          ${x.notes?`<div style="margin-bottom:8px">
+            <div style="font-size:11px;color:var(--t2);margin-bottom:3px;display:flex;align-items:center;gap:4px"><i class="ti ti-notes" style="font-size:12px;color:var(--o)"></i> Notes</div>
+            <textarea class="ie" style="font-size:12px;color:var(--t2);width:100%;resize:vertical;min-height:48px;padding:4px 6px;border:1px dashed var(--bd);border-radius:4px;background:var(--bg2)" onchange="updIF(${i},'notes',this.value)" placeholder="Add notes...">${x.notes}</textarea>
+          </div>`
+          :`<button onclick="toggleIdsNotes(${i})" style="font-size:11px;padding:2px 8px;margin-bottom:8px;border-radius:var(--rs);border:1px dashed var(--bd);color:var(--t2);background:none;cursor:pointer;display:flex;align-items:center;gap:4px"><i class="ti ti-notes"></i> Add notes</button>`}
           <div style="display:flex;gap:6px;flex-wrap:wrap">
             <button onclick="idsAddAction(${i})" style="font-size:11px;padding:4px 10px;border-radius:var(--rs);border:1px solid var(--o);color:var(--o);background:none;cursor:pointer;font-weight:700;display:flex;align-items:center;gap:4px"><i class="ti ti-checkbox"></i> Make action</button>
             <button onclick="idsComplete(${i})" style="font-size:11px;padding:4px 10px;border-radius:var(--rs);border:1px solid var(--gr);color:var(--gr);background:none;cursor:pointer;font-weight:700;display:flex;align-items:center;gap:4px"><i class="ti ti-check"></i> Complete</button>
@@ -1491,7 +1514,7 @@ function openModal(type){
   if(type==='sc')f=`<div class="fld"><label>Metric name</label><input id="f1" placeholder="e.g. Oil changes"/></div><div class="fld"><label>Owner</label><input id="f2" placeholder="e.g. Andy"/></div><div class="fld"><label>Weekly goal</label><input id="f3" type="number" placeholder="e.g. 4"/></div><div class="fld"><label>Frequency note (optional)</label><input id="f4" placeholder="e.g. 2-4/month"/></div>`;
   if(type==='rock')f=`<div class="fld"><label>Rock description</label><input id="f1" placeholder="e.g. Launch training program"/></div><div class="fld"><label>Owner</label><input id="f2" placeholder="e.g. Andy"/></div><div class="fld"><label>Due date</label><input id="f3" placeholder="e.g. Sep 30, 2026"/></div>`;
   if(type==='todo')f=`<div class="fld"><label>Task</label><input id="f1" placeholder="e.g. Update handbook"/></div>${memberSelect('','f2')}<div class="fld"><label>Due date</label><input id="f3" placeholder="e.g. Jul 14"/></div><div class="fld"><label>Notes (optional)</label><textarea id="f4" placeholder="Add context, details, or background..." style="min-height:72px;resize:vertical"></textarea></div>${msToken&&msPlanId?`<div style="font-size:11px;color:var(--gr);padding:4px 0;display:flex;align-items:center;gap:5px"><i class="ti ti-brand-microsoft"></i> Will sync to Planner & To Do automatically</div>`:''}`;
-  if(type==='ids')f=`<div class="fld"><label>Issue</label><input id="f1" placeholder="Describe the issue"/></div><div class="fld"><label>Raised by</label><input id="f2" placeholder="e.g. Andy"/></div><div class="fld"><label>Priority</label><select id="f3"><option value="high">High</option><option value="med" selected>Medium</option><option value="low">Low</option></select></div><div class="fld"><label>Notes (optional)</label><textarea id="f4" placeholder="Additional context..."></textarea></div>`;
+  if(type==='ids')f=`<div class="fld"><label>Issue / Opportunity</label><input id="f1" placeholder="Describe the issue or opportunity"/></div><div class="fld"><label>Raised by</label><input id="f2" placeholder="e.g. Andy"/></div><div class="fld"><label>Priority</label><select id="f3"><option value="high">High</option><option value="med" selected>Medium</option><option value="low">Low</option></select></div><div class="fld"><label>Notes (optional)</label><textarea id="f4" placeholder="Add context, background, or details..." style="min-height:72px;resize:vertical"></textarea></div>`;
   document.getElementById('mfields').innerHTML=f;
   document.getElementById('modal').classList.add('open');
   setTimeout(()=>{const el=document.getElementById('f1');if(el)el.focus();},50);
@@ -1533,9 +1556,34 @@ function saveSettings(){
 }
 function resetSettings(){if(!confirm('Reset all labels to defaults?'))return;ST=defSettings();saveSettings2(ST);D.settings=ST;save();closeSettings();applySettings();render();}
 
+// ── FIX WEEKS ────────────────────────────────────────────────────────────────
+function thisMonday(){
+  const d=new Date(),day=d.getDay(),m=new Date(d);
+  m.setDate(d.getDate()-(day===0?6:day-1));
+  m.setHours(0,0,0,0);
+  return 'Wk '+m.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function fixWeeks(){
+  const curMon=thisMonday();
+  if(!D.weeks||!D.weeks.length){D.weeks=[curMon];D.wkIdx=0;return;}
+  if(!D.weeks.includes(curMon))D.weeks.push(curMon);
+  // Sort chronologically
+  const mo={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  D.weeks.sort((a,b)=>{
+    const pa=a.replace('Wk ','').split(' ');
+    const pb=b.replace('Wk ','').split(' ');
+    const yr=new Date().getFullYear();
+    return new Date(yr,mo[pa[0]],parseInt(pa[1]))-new Date(yr,mo[pb[0]],parseInt(pb[1]));
+  });
+  D.weeks=[...new Set(D.weeks)];
+  const idx=D.weeks.indexOf(curMon);
+  D.wkIdx=idx>=0?idx:D.weeks.length-1;
+}
+
 // ── STARTUP ───────────────────────────────────────────────────────────────────
 applySettings();
 migrateLegacyData();
+fixWeeks();
 render();
 // Handle auth redirect token in URL hash
 const _hash=location.hash;
