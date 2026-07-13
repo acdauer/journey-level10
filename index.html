@@ -149,6 +149,7 @@ select:focus{outline:none;border-color:var(--o)}
       <select id="meeting-type-select" onchange="switchMeetingType(this.value)" style="font-size:12px;padding:5px 10px;border-radius:var(--rs);border:2px solid var(--o);background:var(--bg);color:var(--o);font-weight:700;cursor:pointer">
         <option value="admin">Admin Sync</option>
         <option value="store">Store Sync</option>
+        <option value="ministry">Ministry Sync</option>
       </select>
       <div id="timer-display" style="font-size:13px;font-weight:700;color:var(--t2);min-width:52px;text-align:center">00:00</div>
       <button class="ibtn" id="timer-btn" onclick="toggleTimer()" style="border-color:var(--gr);color:var(--gr)"><i class="ti ti-player-play"></i> Start</button>
@@ -252,6 +253,13 @@ const MEETING_TYPES={
     emails:['andy@journeyautorepair.com','pete@journeyautorepair.com','josh@journeyautorepair.com','dave@journeyautorepair.com'],
     scTabs:['New Hope','Andover','Individual'],
     scKeys:['newhope','andover','individual']
+  },
+  ministry:{
+    label:'Ministry Sync',
+    members:['Andy','Pete'],
+    emails:['andy@journeyautorepair.com','pete@journeyautorepair.com'],
+    scTabs:['Ministry Goals','Individual'],
+    scKeys:['ministry','individual']
   }
 };
 let activeMeetingType='admin'; // default
@@ -306,7 +314,7 @@ function defData(){return{
   weeks:[wkLabel(0)],wkIdx:0,agDone:{},settings:null,
   // Shared across both meetings
   rocks:[],
-  scorecard:{corporate:JSON.parse(JSON.stringify(DEF_CORP)),newhope:JSON.parse(JSON.stringify(DEF_LOC)),andover:JSON.parse(JSON.stringify(DEF_LOC)),individual:[]},
+  scorecard:{corporate:JSON.parse(JSON.stringify(DEF_CORP)),newhope:JSON.parse(JSON.stringify(DEF_LOC)),andover:JSON.parse(JSON.stringify(DEF_LOC)),individual:[],ministry:[]},
   // Per-meeting-type data — keyed by meeting type (admin/store)
   meetings:{
     admin:{
@@ -325,6 +333,14 @@ function defData(){return{
         {id:2,person:'Pete',text:'',weekData:{}},
         {id:3,person:'Josh',text:'',weekData:{}},
         {id:4,person:'Dave',text:'',weekData:{}}
+      ],
+      todos:[],ids:[],
+      weekRatings:{},meetingDurations:{},agDone:{}
+    },
+    ministry:{
+      headlines:[
+        {id:1,person:'Andy',text:'',weekData:{}},
+        {id:2,person:'Pete',text:'',weekData:{}}
       ],
       todos:[],ids:[],
       weekRatings:{},meetingDurations:{},agDone:{}
@@ -435,8 +451,12 @@ function jumpToCurrentWeek(){
 function migrateLegacyData(){
   if(!D.meetings)D.meetings={
     admin:{headlines:[],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}},
-    store:{headlines:[],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}}
+    store:{headlines:[],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}},
+    ministry:{headlines:[],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}}
   };
+  // Ensure ministry exists if added after initial setup
+  if(!D.meetings.ministry)D.meetings.ministry={headlines:[{id:1,person:'Andy',text:'',weekData:{}},{id:2,person:'Pete',text:'',weekData:{}}],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}};
+  if(!D.scorecard.ministry)D.scorecard.ministry=[];
   // If root D.ids has items and meetings.admin.ids is empty, migrate them
   if(D.ids&&D.ids.length&&(!D.meetings.admin.ids||!D.meetings.admin.ids.length)){
     D.meetings.admin.ids=[...D.ids];
@@ -479,7 +499,11 @@ function switchMeetingType(type){
   updateTimerDisplay();
   // Ensure meeting data structure exists
   if(!D.meetings)D.meetings={};
-  if(!D.meetings[type])D.meetings[type]={headlines:[],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}};
+  if(!D.meetings[type])D.meetings[type]={
+    headlines:MEETING_TYPES[type].members.map((p,i)=>({id:i+1,person:p,text:'',weekData:{}})),
+    todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}
+  };
+  if(!D.scorecard.ministry)D.scorecard.ministry=[];
   // Update meeting type dropdown
   const sel=document.getElementById('meeting-type-select');
   if(sel)sel.value=type;
