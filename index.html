@@ -312,8 +312,10 @@ function applySettings(){
 // ── DATA ─────────────────────────────────────────────────────────────────────
 function defData(){return{
   weeks:[wkLabel(0)],wkIdx:0,agDone:{},settings:null,
-  // Shared across both meetings
+  // Shared across admin + store meetings
   rocks:[],
+  // Ministry has its own separate rocks
+  ministryRocks:[],
   scorecard:{corporate:JSON.parse(JSON.stringify(DEF_CORP)),newhope:JSON.parse(JSON.stringify(DEF_LOC)),andover:JSON.parse(JSON.stringify(DEF_LOC)),individual:[],ministry:[]},
   // Per-meeting-type data — keyed by meeting type (admin/store)
   meetings:{
@@ -457,6 +459,7 @@ function migrateLegacyData(){
   // Ensure ministry exists if added after initial setup
   if(!D.meetings.ministry)D.meetings.ministry={headlines:[{id:1,person:'Andy',text:'',weekData:{}},{id:2,person:'Pete',text:'',weekData:{}}],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}};
   if(!D.scorecard.ministry)D.scorecard.ministry=[];
+  if(!D.ministryRocks)D.ministryRocks=[];
   // If root D.ids has items and meetings.admin.ids is empty, migrate them
   if(D.ids&&D.ids.length&&(!D.meetings.admin.ids||!D.meetings.admin.ids.length)){
     D.meetings.admin.ids=[...D.ids];
@@ -483,6 +486,14 @@ function migrateLegacyData(){
   }
 }
 
+function getRocks(){
+  if(activeMeetingType==='ministry'){
+    if(!D.ministryRocks)D.ministryRocks=[];
+    return D.ministryRocks;
+  }
+  if(!D.rocks)D.rocks=[];
+  return D.rocks;
+}
 function mData(){
   if(!D.meetings)D.meetings={admin:{headlines:[],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}},store:{headlines:[],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}}};
   if(!D.meetings[activeMeetingType])D.meetings[activeMeetingType]={headlines:[],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}};
@@ -504,6 +515,7 @@ function switchMeetingType(type){
     todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}
   };
   if(!D.scorecard.ministry)D.scorecard.ministry=[];
+  if(!D.ministryRocks)D.ministryRocks=[];
   // Update meeting type dropdown
   const sel=document.getElementById('meeting-type-select');
   if(sel)sel.value=type;
@@ -938,12 +950,13 @@ async function sendSummaryEmail(){
 
     // Build rocks HTML
     let rocksHtml='<table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f6f7"><th style="padding:6px 10px;text-align:left;border:1px solid #e2e4e7">Rock</th><th style="padding:6px 10px;text-align:left;border:1px solid #e2e4e7">Owner</th><th style="padding:6px 10px;text-align:left;border:1px solid #e2e4e7">Due</th><th style="padding:6px 10px;text-align:center;border:1px solid #e2e4e7">Status</th></tr>';
-    if(D.rocks&&D.rocks.length){
-      D.rocks.forEach(r=>{
+    const emailRocks=getRocks();
+    if(emailRocks&&emailRocks.length){
+      emailRocks.forEach(r=>{
         const sc=r.status==='on'?'✅ On track':r.status==='risk'?'⚠️ At risk':'❌ Off track';
         rocksHtml+=`<tr><td style="padding:6px 10px;border:1px solid #e2e4e7">${r.rock}</td><td style="padding:6px 10px;border:1px solid #e2e4e7">${r.owner}</td><td style="padding:6px 10px;border:1px solid #e2e4e7">${r.due}</td><td style="padding:6px 10px;border:1px solid #e2e4e7;text-align:center">${sc}</td></tr>`;
       });
-    }else{rocksHtml+='<tr><td colspan="4" style="padding:8px 10px;border:1px solid #e2e4e7;color:#6b7280">No rocks this quarter</td></tr>';}
+    }else if(!emailRocks||!emailRocks.length){rocksHtml+='<tr><td colspan="4" style="padding:8px 10px;border:1px solid #e2e4e7;color:#6b7280">No rocks this quarter</td></tr>';}
     rocksHtml+='</table>';
 
     // Build headlines HTML
@@ -1081,11 +1094,11 @@ function render(){
   const scOn=allSC.filter(r=>status(r.values[wk],r.goal)==='g').length;
   const openT=(md.todos||[]).filter(t=>t.status==='open').length;
   const openI=(md.ids||[]).filter(i=>i.status==='open').length;
-  const rOn=D.rocks.filter(r=>r.status==='on').length;
+  const rOn=getRocks().filter(r=>r.status==='on').length;
   const sg=document.getElementById('sgrid');
   if(sg)sg.innerHTML=`
     <div class="scard"><div class="slbl">Scorecard on track</div><div class="sval ${scOn===allSC.length&&allSC.length>0?'cg':'ca'}">${scOn}/${allSC.length}</div><div class="ssub">metrics this week</div></div>
-    <div class="scard"><div class="slbl">Rocks on track</div><div class="sval ${rOn===D.rocks.length&&D.rocks.length>0?'cg':'ca'}">${rOn}/${D.rocks.length||0}</div><div class="ssub">quarterly rocks</div></div>
+    <div class="scard"><div class="slbl">Rocks on track</div><div class="sval ${rOn===D.rocks.length&&D.rocks.length>0?'cg':'ca'}">${rOn}/${getRocks().length||0}</div><div class="ssub">quarterly rocks</div></div>
     <div class="scard"><div class="slbl">Open to-dos</div><div class="sval ${openT===0?'cg':'ca'}">${openT}</div><div class="ssub">need completion</div></div>
     <div class="scard"><div class="slbl">Open issues</div><div class="sval ${openI===0?'cg':'cr'}">${openI}</div><div class="ssub">in IDS queue</div></div>`;
   // Nav
@@ -1156,17 +1169,18 @@ function delSC(k,ri){if(confirm('Delete this metric?')){D.scorecard[k].splice(ri
 
 // ── ROCKS ─────────────────────────────────────────────────────────────────────
 function rRocks(){
+  const rocks=getRocks();
   let rows='';
-  if(!D.rocks.length)rows=`<div style="padding:2rem;text-align:center;color:var(--t2);font-size:13px">No rocks this quarter</div>`;
-  else D.rocks.forEach((r,i)=>{
+  if(!rocks.length)rows=`<div style="padding:2rem;text-align:center;color:var(--t2);font-size:13px">No rocks this quarter</div>`;
+  else rocks.forEach((r,i)=>{
     const pl={on:'pon',off:'pof',risk:'pri'},lb={on:'On track',off:'Off track',risk:'At risk'};
     rows+=`<div class="cw"><div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="pill ${pl[r.status]||'pon'}">${lb[r.status]||'On track'}</span><input class="ie" value="${r.rock}" style="font-weight:700;font-size:13px" onchange="updRF(${i},'rock',this.value)"/></div><div style="font-size:11px;color:var(--t2);display:flex;gap:8px;align-items:center">Owner:<input class="ie" value="${r.owner}" style="font-size:11px;width:110px" onchange="updRF(${i},'owner',this.value)"/>Due:<input class="ie" value="${r.due}" style="font-size:11px;width:100px" onchange="updRF(${i},'due',this.value)"/></div></div><select onchange="updRS(${i},this.value)"><option value="on" ${r.status==='on'?'selected':''}>On track</option><option value="risk" ${r.status==='risk'?'selected':''}>At risk</option><option value="off" ${r.status==='off'?'selected':''}>Off track</option></select><button class="rbtn" onclick="delR(${i})"><i class="ti ti-trash" style="font-size:12px"></i></button></div>`;
   });
   return `<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-mountain"></i><div><div class="ctitle">${ST.navTabs[3]}</div><div class="csub">90-day priorities</div></div></div><span class="tbadge">5 min</span></div>${rows}<button class="addbtn" onclick="openModal('rock')"><i class="ti ti-plus"></i> Add rock</button></div>`;
 }
-function updRF(i,f,v){D.rocks[i][f]=v;save();}
-function updRS(i,v){D.rocks[i].status=v;save();render();}
-function delR(i){if(confirm('Delete this rock?')){D.rocks.splice(i,1);save();render();}}
+function updRF(i,f,v){const r=getRocks();r[i][f]=v;save();}
+function updRS(i,v){const r=getRocks();r[i].status=v;save();render();}
+function delR(i){if(confirm('Delete this rock?')){const r=getRocks();r.splice(i,1);save();render();}}
 
 // ── TO-DOS ────────────────────────────────────────────────────────────────────
 function rTodos(){
@@ -1550,7 +1564,7 @@ function saveModal(){
   const t=modalCtx;
   if(t==='hl'&&v('f1'))D.headlines.push({id:Date.now(),person:v('f1'),text:''});
   else if(t==='sc'&&v('f1')){const k=DEF_SC_KEYS[activeSCTab];D.scorecard[k].push({id:Date.now(),metric:v('f1'),owner:v('f2')||'—',goal:v('f3')||'1',freq:v('f4')||'Weekly',values:{}});}
-  else if(t==='rock'&&v('f1'))D.rocks.push({id:Date.now(),rock:v('f1'),owner:v('f2')||'—',due:v('f3')||'—',status:'on'});
+  else if(t==='rock'&&v('f1')){const r=getRocks();r.push({id:Date.now(),rock:v('f1'),owner:v('f2')||'—',due:v('f3')||'—',status:'on'});}
   else if(t==='todo'&&v('f1')){const md=mData();if(!md.todos)md.todos=[];const todo={id:Date.now(),task:v('f1'),owner:v('f2')||'—',due:v('f3')||curWeek(),notes:v('f4')||'',status:'open',weekCreated:curWeek()};md.todos.push(todo);if(msToken&&msPlanId)createPlannerTask(todo);}
   else if(t==='ids'&&v('f1')){const md=mData();if(!md.ids)md.ids=[];md.ids.push({id:Date.now(),issue:v('f1'),raisedBy:v('f2')||'—',priority:v('f3')||'med',notes:v('f4')||'',status:'open',weekCreated:curWeek()});}
   save();closeModal();render();
