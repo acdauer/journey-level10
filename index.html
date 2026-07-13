@@ -419,7 +419,7 @@ function switchWeek(wk){
   }
 }
 function jumpToCurrentWeek(){
-  D.wkIdx=D.weeks.length-1;
+  fixWeeks(); // ensure current week is correct
   const sel=document.getElementById('wk-select');
   if(sel){
     sel.value=D.weeks[D.wkIdx];
@@ -1565,19 +1565,32 @@ function thisMonday(){
 }
 function fixWeeks(){
   const curMon=thisMonday();
-  if(!D.weeks||!D.weeks.length){D.weeks=[curMon];D.wkIdx=0;return;}
-  if(!D.weeks.includes(curMon))D.weeks.push(curMon);
-  // Sort chronologically
   const mo={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-  D.weeks.sort((a,b)=>{
-    const pa=a.replace('Wk ','').split(' ');
-    const pb=b.replace('Wk ','').split(' ');
-    const yr=new Date().getFullYear();
-    return new Date(yr,mo[pa[0]],parseInt(pa[1]))-new Date(yr,mo[pb[0]],parseInt(pb[1]));
+  const yr=new Date().getFullYear();
+
+  function parseWk(w){
+    const p=w.replace('Wk ','').split(' ');
+    return new Date(yr,mo[p[0]],parseInt(p[1]));
+  }
+  const curDate=parseWk(curMon);
+
+  if(!D.weeks||!D.weeks.length){D.weeks=[curMon];D.wkIdx=0;save();return;}
+
+  // Remove any future weeks (beyond current Monday)
+  D.weeks=D.weeks.filter(w=>{
+    try{return parseWk(w)<=curDate;}catch(e){return false;}
   });
+
+  // Ensure current Monday is in the list
+  if(!D.weeks.includes(curMon))D.weeks.push(curMon);
+
+  // Remove duplicates and sort chronologically
   D.weeks=[...new Set(D.weeks)];
-  const idx=D.weeks.indexOf(curMon);
-  D.wkIdx=idx>=0?idx:D.weeks.length-1;
+  D.weeks.sort((a,b)=>parseWk(a)-parseWk(b));
+
+  // Always set wkIdx to current Monday (last item)
+  D.wkIdx=D.weeks.length-1;
+  save();
 }
 
 // ── STARTUP ───────────────────────────────────────────────────────────────────
