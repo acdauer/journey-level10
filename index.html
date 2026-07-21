@@ -1180,6 +1180,7 @@ function rRocks(){
 }
 function updRF(i,f,v){const r=getRocks();r[i][f]=v;save();}
 function updRS(i,v){const r=getRocks();r[i].status=v;save();render();}
+function forcePush(){if(msToken){lastHash='';pushSP().catch(e=>console.warn('forcePush error:',e));}}
 function delR(i){if(confirm('Delete this rock?')){const r=getRocks();r.splice(i,1);save();render();}}
 
 // ── TO-DOS ────────────────────────────────────────────────────────────────────
@@ -1219,7 +1220,8 @@ function rTodos(){
             placeholder="Task description"/>
           ${t.notes||!isDone?`<div style="margin-bottom:6px">
             ${t.notes?`<div style="font-size:11px;color:var(--t2);margin-bottom:3px;display:flex;align-items:center;gap:4px"><i class="ti ti-notes" style="font-size:12px;color:var(--o)"></i> Notes</div>
-            <textarea class="ie" style="font-size:12px;color:var(--t2);width:100%;resize:vertical;min-height:48px;padding:4px 6px;border:1px dashed var(--bd);border-radius:4px;background:var(--bg2)" onchange="updTF(${i},'notes',this.value)" placeholder="Add notes...">${t.notes}</textarea>`
+            <textarea id="todo-note-${i}" style="font-size:12px;color:var(--t2);width:100%;resize:vertical;min-height:48px;padding:4px 6px;border:1px dashed var(--bd);border-radius:4px;background:var(--bg2);display:block;margin-bottom:5px" placeholder="Add notes...">${t.notes}</textarea>
+            <button onclick="saveTodoNote(${i})" style="font-size:11px;padding:3px 10px;border-radius:var(--rs);border:none;background:var(--o);color:#fff;cursor:pointer;font-weight:700;display:flex;align-items:center;gap:4px"><i class="ti ti-device-floppy"></i> Save note</button>`
             :`<button onclick="toggleTodoNotes(${i})" style="font-size:11px;padding:2px 8px;border-radius:var(--rs);border:1px dashed var(--bd);color:var(--t2);background:none;cursor:pointer;display:flex;align-items:center;gap:4px"><i class="ti ti-notes"></i> Add notes</button>`}
           </div>`:''}
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -1303,7 +1305,37 @@ function togT(i){
 }
 function reopenTodo(i){const md=mData();md.todos[i].status='open';save();render();}
 function toggleTodoNotes(i){const md=mData();md.todos[i].notes=md.todos[i].notes||' ';save();render();}
+function saveTodoNote(i){
+  const el=document.getElementById('todo-note-'+i);
+  if(!el)return;
+  const md=mData();
+  md.todos[i].notes=el.value;
+  save();forcePush();
+  // Visual feedback
+  const btn=el.nextElementSibling;
+  if(btn){
+    const orig=btn.innerHTML;
+    btn.innerHTML='<i class="ti ti-check"></i> Saved!';
+    btn.style.background='var(--gr)';
+    setTimeout(()=>{btn.innerHTML=orig;btn.style.background='var(--o)';},1500);
+  }
+}
 function toggleIdsNotes(i){const md=mData();md.ids[i].notes=md.ids[i].notes||' ';save();render();}
+function saveIdsNote(i){
+  const el=document.getElementById('ids-note-'+i);
+  if(!el)return;
+  const md=mData();
+  md.ids[i].notes=el.value;
+  save();forcePush();
+  // Visual feedback
+  const btn=el.nextElementSibling;
+  if(btn){
+    const orig=btn.innerHTML;
+    btn.innerHTML='<i class="ti ti-check"></i> Saved!';
+    btn.style.background='var(--gr)';
+    setTimeout(()=>{btn.innerHTML=orig;btn.style.background='var(--o)';},1500);
+  }
+}
 function updTF(i,f,v){const md=mData();md.todos[i][f]=v;save();}
 function updTS(i,v){const md=mData();md.todos[i].status=v;save();render();}
 function delT(i){if(confirm('Delete this to-do?')){const md=mData();md.todos.splice(i,1);save();render();}}
@@ -1336,7 +1368,8 @@ function rIDS(){
           </div>
           ${x.notes?`<div style="margin-bottom:8px">
             <div style="font-size:11px;color:var(--t2);margin-bottom:3px;display:flex;align-items:center;gap:4px"><i class="ti ti-notes" style="font-size:12px;color:var(--o)"></i> Notes</div>
-            <textarea class="ie" style="font-size:12px;color:var(--t2);width:100%;resize:vertical;min-height:48px;padding:4px 6px;border:1px dashed var(--bd);border-radius:4px;background:var(--bg2)" onchange="updIF(${i},'notes',this.value)" placeholder="Add notes...">${x.notes}</textarea>
+            <textarea id="ids-note-${i}" style="font-size:12px;color:var(--t2);width:100%;resize:vertical;min-height:48px;padding:4px 6px;border:1px dashed var(--bd);border-radius:4px;background:var(--bg2);display:block;margin-bottom:5px" placeholder="Add notes...">${x.notes}</textarea>
+            <button onclick="saveIdsNote(${i})" style="font-size:11px;padding:3px 10px;border-radius:var(--rs);border:none;background:var(--o);color:#fff;cursor:pointer;font-weight:700;display:flex;align-items:center;gap:4px"><i class="ti ti-device-floppy"></i> Save note</button>
           </div>`
           :`<button onclick="toggleIdsNotes(${i})" style="font-size:11px;padding:2px 8px;margin-bottom:8px;border-radius:var(--rs);border:1px dashed var(--bd);color:var(--t2);background:none;cursor:pointer;display:flex;align-items:center;gap:4px"><i class="ti ti-notes"></i> Add notes</button>`}
           <div style="display:flex;gap:6px;flex-wrap:wrap">
