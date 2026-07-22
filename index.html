@@ -37,8 +37,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sval{font-size:22px;font-weight:700}
 .ssub{font-size:11px;color:var(--t2);margin-top:2px}
 .cg{color:var(--gr)}.ca{color:var(--am)}.cr{color:var(--re)}
-.nav{display:flex;border-bottom:1px solid var(--bd);margin-bottom:1.25rem;overflow-x:auto}
-.ntab{font-size:12px;padding:9px 13px;cursor:pointer;color:var(--t2);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.nav{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--bd);margin-bottom:1.25rem;}
+.ntab{font-size:12px;padding:8px 10px;cursor:pointer;color:var(--t2);border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;align-items:center;gap:4px;flex:1;justify-content:center;min-width:0}
 .ntab i{font-size:13px}
 .ntab:hover{color:var(--t)}
 .ntab.active{color:var(--o);border-bottom-color:var(--o);font-weight:700}
@@ -310,9 +310,9 @@ const DEF_KEYS=['headlines','scorecard','rocks','todos','ids','conclude'];
 const DEF_SC=['Corporate Goals','New Hope','Andover','Individual'];
 const DEF_SC_KEYS=['corporate','newhope','andover','individual'];
 const DEF_AGENDA=[
-  {label:'Segue / check-in',minutes:5},{label:'Scorecard review',minutes:5},
-  {label:'Rock review',minutes:5},{label:'Customer / employee headlines',minutes:5},
-  {label:'To-do list review',minutes:5},{label:'IDS — Identify, Discuss, Solve',minutes:60},
+  {label:'Check in - Shout Outs',minutes:5},{label:'Scorecard review',minutes:5},
+  {label:'Q3 Objective Review',minutes:5},{label:'To-do list review',minutes:5},
+  {label:'IDS — Identify, Discuss, Solve',minutes:60},
   {label:'Conclude & rate the meeting',minutes:5}
 ];
 const DEF_CORP=[
@@ -346,6 +346,8 @@ if(s.navTabs&&s.navTabs.length===7)s.navTabs=s.navTabs.slice(1);return s;}}catch
 function saveSettings2(s){try{localStorage.setItem('jl10_settings',JSON.stringify(s));}catch(e){}}
 let ST=loadSettings();
 function applySettings(){
+  // Ensure agendaItems matches 6 tabs — trim to 6 if legacy 7-item list
+  if(ST.agendaItems&&ST.agendaItems.length===7)ST.agendaItems=ST.agendaItems.slice(1);
   const e1=document.getElementById('org-name'),e2=document.getElementById('meeting-name');
   if(e1)e1.textContent=ST.orgName;if(e2)e2.textContent=ST.meetingName;
   document.title=ST.orgName+' — '+ST.meetingName;
@@ -1175,7 +1177,7 @@ function renderAgendaSidebar(){
 }
 function agendaGoTo(i){
   activeAgendaItem=i;
-  const map={0:"headlines",1:"scorecard",2:"rocks",3:"headlines",4:"todos",5:"ids",6:"conclude"};
+  const map={0:"headlines",1:"scorecard",2:"rocks",3:"todos",4:"ids",5:"conclude"};
   const target=map[i];
   if(target){
     activeSection=target;
@@ -1226,7 +1228,7 @@ function render(){
   c.innerHTML=(map[activeSection]||rAgenda)();
 }
 
-function sw(s,el){activeSection=s;document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');const agMap={headlines:0,scorecard:1,rocks:2,headlines:3,todos:4,ids:5,conclude:6};if(agMap[s]!==undefined)activeAgendaItem=agMap[s];render();}
+function sw(s,el){activeSection=s;document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');const agMap={headlines:0,scorecard:1,rocks:2,todos:3,ids:4,conclude:5};if(agMap[s]!==undefined)activeAgendaItem=agMap[s];render();}
 
 // ── AGENDA ────────────────────────────────────────────────────────────────────
 function rAgenda(){
