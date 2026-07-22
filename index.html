@@ -1228,7 +1228,28 @@ function render(){
   c.innerHTML=(map[activeSection]||rAgenda)();
 }
 
-function sw(s,el){activeSection=s;document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');const agMap={headlines:0,scorecard:1,rocks:2,todos:3,ids:4,conclude:5};if(agMap[s]!==undefined)activeAgendaItem=agMap[s];render();}
+function sw(s,el){
+  // Flush any unsaved rock field values before navigating away
+  if(activeSection==='rocks'){
+    const rocks=getRocks();
+    rocks.forEach(function(r,i){
+      var f30=document.querySelector('[data-i="'+i+'"][data-f="milestone30"]');
+      var f60=document.querySelector('[data-i="'+i+'"][data-f="milestone60"]');
+      var fn=document.querySelector('[data-i="'+i+'"][data-f="notes"]');
+      if(f30&&f30.value!==r.milestone30)r.milestone30=f30.value;
+      if(f60&&f60.value!==r.milestone60)r.milestone60=f60.value;
+      if(fn&&fn.value!==r.notes)r.notes=fn.value;
+    });
+    saveLocal();
+    if(msToken)pushSP().catch(function(e){console.warn(e);});
+  }
+  activeSection=s;
+  document.querySelectorAll('.ntab').forEach(function(t){t.classList.remove('active');});
+  if(el)el.classList.add('active');
+  const agMap={headlines:0,scorecard:1,rocks:2,todos:3,ids:4,conclude:5};
+  if(agMap[s]!==undefined)activeAgendaItem=agMap[s];
+  render();
+}
 
 // ── AGENDA ────────────────────────────────────────────────────────────────────
 function rAgenda(){
@@ -1248,7 +1269,7 @@ function rHeadlines(){
   const rows=md.headlines.map((h,i)=>{
     if(!h.weekData)h.weekData={};
     const val=h.weekData[wk]||'';
-    return `<div class="hlrow"><div class="hlp">${h.person}</div><input class="tf" value="${val}" placeholder="Type headline here..." onchange="updHL(${i},this.value)"/></div>`;
+    return `<div class="hlrow"><div class="hlp">${h.person}</div><input class="tf" value="${val}" placeholder="Type headline here..." oninput="updHL(${i},this.value)"/></div>`;
   }).join('');
   return `<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-speakerphone"></i><div><div class="ctitle">${ST.navTabs[1]}</div><div class="csub">${curMeeting().label} — fill in before the meeting</div></div></div><a href="https://feelingswheel.com/" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--o);text-decoration:none;padding:4px 10px;border-radius:var(--rs);border:1px solid var(--o);white-space:nowrap"><i class="ti ti-mood-smile"></i> Feelings wheel</a></div>${rows}<button class="addbtn" onclick="openModal('hl')"><i class="ti ti-plus"></i> Add person</button></div>`;
 }
@@ -1270,11 +1291,11 @@ function rScorecard(){
   else rows.forEach((r,ri)=>{
     const tds=vis.map((w,wi)=>{
       const isCur=wi===vis.length-1,val=r.values[w]!==undefined?r.values[w]:'';
-      if(isCur)return `<td style="text-align:center"><input class="ni" style="width:62px" type="number" min="0" value="${val}" placeholder="—" onchange="updSC('${key}',${ri},'${w}',this.value)"/></td>`;
+      if(isCur)return `<td style="text-align:center"><input class="ni" style="width:62px" type="number" min="0" value="${val}" placeholder="—" oninput="updSC('${key}',${ri},'${w}',this.value)"/></td>`;
       return `<td style="text-align:center;color:var(--t2)">${val!==''?val:'—'}</td>`;
     }).join('');
     const cv=r.values[vis[vis.length-1]]??'';
-    tbody+=`<tr><td style="width:24%"><input class="ie" value="${r.metric}" onchange="updSCF('${key}',${ri},'metric',this.value)"/>${r.freq&&r.freq!=='Weekly'?`<div class="fn">${r.freq}</div>`:''}</td><td style="width:13%"><input class="ie" value="${r.owner}" onchange="updSCF('${key}',${ri},'owner',this.value)"/></td><td style="width:9%;text-align:center"><input class="ien" type="number" min="0" value="${r.goal}" onchange="updSCF('${key}',${ri},'goal',this.value)"/></td>${tds}<td style="width:8%;text-align:center">${sbadge(cv,r.goal)}</td><td style="width:32px;text-align:center"><button class="rbtn" onclick="delSC('${key}',${ri})"><i class="ti ti-trash" style="font-size:12px"></i></button></td></tr>`;
+    tbody+=`<tr><td style="width:24%"><input class="ie" value="${r.metric}" oninput="updSCF('${key}',${ri},'metric',this.value)"/>${r.freq&&r.freq!=='Weekly'?`<div class="fn">${r.freq}</div>`:''}</td><td style="width:13%"><input class="ie" value="${r.owner}" oninput="updSCF('${key}',${ri},'owner',this.value)"/></td><td style="width:9%;text-align:center"><input class="ien" type="number" min="0" value="${r.goal}" oninput="updSCF('${key}',${ri},'goal',this.value)"/></td>${tds}<td style="width:8%;text-align:center">${sbadge(cv,r.goal)}</td><td style="width:32px;text-align:center"><button class="rbtn" onclick="delSC('${key}',${ri})"><i class="ti ti-trash" style="font-size:12px"></i></button></td></tr>`;
   });
   const mtScTabs=curMeeting().scTabs;
   const tabs=mtScTabs.map((t,i)=>`<div class="sctab ${i===activeSCTab?'active':''}" onclick="swSC(${i})">${t}</div>`).join('');
@@ -1320,7 +1341,7 @@ function rRocks(){
     rockIn.style.cssText='font-weight:700;font-size:13px';
     rockIn.setAttribute('data-i',i);
     rockIn.setAttribute('data-f','rock');
-    rockIn.onchange=function(){updRF(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
+    rockIn.oninput=function(){updRF(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
     titleRow.appendChild(pill);
     titleRow.appendChild(rockIn);
     left.appendChild(titleRow);
@@ -1331,12 +1352,12 @@ function rRocks(){
     var ownerIn=document.createElement('input');
     ownerIn.className='ie';ownerIn.value=r.owner;ownerIn.style.cssText='font-size:11px;width:110px';
     ownerIn.setAttribute('data-i',i);ownerIn.setAttribute('data-f','owner');
-    ownerIn.onchange=function(){updRF(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
+    ownerIn.oninput=function(){updRF(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
     var dSpan=document.createElement('span');dSpan.textContent='Due:';
     var dueIn=document.createElement('input');
     dueIn.className='ie';dueIn.value=r.due;dueIn.style.cssText='font-size:11px;width:100px';
     dueIn.setAttribute('data-i',i);dueIn.setAttribute('data-f','due');
-    dueIn.onchange=function(){updRF(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
+    dueIn.oninput=function(){updRF(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
     metaRow.appendChild(oSpan);metaRow.appendChild(ownerIn);
     metaRow.appendChild(dSpan);metaRow.appendChild(dueIn);
     left.appendChild(metaRow);
@@ -1376,7 +1397,7 @@ function rRocks(){
       ta.placeholder='What should be done in '+(fi===0?'30':'60')+' days?';
       ta.value=r[field];
       ta.setAttribute('data-i',i);ta.setAttribute('data-f',field);
-      ta.onblur=function(){saveRockField(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
+      ta.oninput=function(){saveRockField(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
       cell.appendChild(lbl);cell.appendChild(ta);
       grid.appendChild(cell);
     });
@@ -1393,7 +1414,7 @@ function rRocks(){
     notesTA.placeholder='Add notes, updates, or context...';
     notesTA.value=r.notes;
     notesTA.setAttribute('data-i',i);notesTA.setAttribute('data-f','notes');
-    notesTA.onblur=function(){saveRockField(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
+    notesTA.oninput=function(){saveRockField(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
     notesWrap.appendChild(notesLbl);notesWrap.appendChild(notesTA);
     div.appendChild(notesWrap);
 
@@ -1404,11 +1425,11 @@ function rRocks(){
 
 
 
-function updRF(i,f,v){const r=getRocks();r[i][f]=v;save();}
-function updRS(i,v){const r=getRocks();r[i].status=v;save();render();}
+function updRF(i,f,v){const r=getRocks();if(!r[i])return;r[i][f]=v;saveLocal();if(msToken)pushSP().catch(e=>console.warn(e));}
+function updRS(i,v){const r=getRocks();if(!r[i])return;r[i].status=v;save();render();}
 function forcePush(){if(msToken){lastHash='';pushSP().catch(e=>console.warn('forcePush error:',e));}}
 function delR(i){if(confirm('Delete this rock?')){const r=getRocks();r.splice(i,1);save();render();}}
-function saveRockField(i,field,val){const rocks=getRocks();if(!rocks[i])return;rocks[i][field]=val;save();}
+function saveRockField(i,field,val){const rocks=getRocks();if(!rocks[i])return;rocks[i][field]=val;saveLocal();if(msToken)pushSP().catch(e=>console.warn(e));}
 
 // ── TO-DOS ────────────────────────────────────────────────────────────────────
 function rTodos(){
@@ -1443,7 +1464,7 @@ function rTodos(){
         <div style="flex:1">
           <input class="ie" value="${t.task}"
             style="font-size:13px;font-weight:600;width:100%;margin-bottom:6px;${isDone?'text-decoration:line-through;color:var(--t2)':''}"
-            onchange="updTF(${i},'task',this.value)"
+            oninput="updTF(${i},'task',this.value)"
             placeholder="Task description"/>
           ${t.notes||!isDone?`<div style="margin-bottom:6px">
             ${t.notes?`<div style="font-size:11px;color:var(--t2);margin-bottom:3px;display:flex;align-items:center;gap:4px"><i class="ti ti-notes" style="font-size:12px;color:var(--o)"></i> Notes</div>
@@ -1455,12 +1476,12 @@ function rTodos(){
             <div style="display:flex;align-items:center;gap:4px">
               <span style="font-size:11px;color:var(--t2)">Owner:</span>
               <input class="ie" value="${t.owner}" style="font-size:11px;color:var(--t2);width:90px"
-                onchange="updTF(${i},'owner',this.value)"/>
+                oninput="updTF(${i},'owner',this.value)"/>
             </div>
             <div style="display:flex;align-items:center;gap:4px">
               <span style="font-size:11px;color:var(--t2)">Due:</span>
               <input class="ie" value="${t.due}" style="font-size:11px;color:var(--t2);width:70px"
-                onchange="updTF(${i},'due',this.value)"/>
+                oninput="updTF(${i},'due',this.value)"/>
             </div>
             ${t.plannerSynced?'<span class="ptag">✓ Planner</span>':''}
             <div style="margin-left:auto;display:flex;gap:4px">
@@ -1588,10 +1609,10 @@ function rIDS(){
         <div style="flex:1">
           <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap">
             <span class="iph ${pc[x.priority]||'me'}">${x.priority||'med'}</span>
-            <input class="ie" value="${x.issue}" style="font-weight:700;font-size:13px;flex:1;min-width:120px" onchange="updIF(${i},'issue',this.value)"/>
+            <input class="ie" value="${x.issue}" style="font-weight:700;font-size:13px;flex:1;min-width:120px" oninput="updIF(${i},'issue',this.value)"/>
           </div>
           <div style="font-size:11px;color:var(--t2);margin-bottom:8px">Raised by:
-            <input class="ie" value="${x.raisedBy}" style="font-size:11px;color:var(--t2);width:100px" onchange="updIF(${i},'raisedBy',this.value)"/>
+            <input class="ie" value="${x.raisedBy}" style="font-size:11px;color:var(--t2);width:100px" oninput="updIF(${i},'raisedBy',this.value)"/>
           </div>
           ${x.notes?`<div style="margin-bottom:8px">
             <div style="font-size:11px;color:var(--t2);margin-bottom:3px;display:flex;align-items:center;gap:4px"><i class="ti ti-notes" style="font-size:12px;color:var(--o)"></i> Notes</div>
