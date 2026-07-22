@@ -150,6 +150,7 @@ select:focus{outline:none;border-color:var(--o)}
         <option value="admin">Admin Sync</option>
         <option value="store">Store Sync</option>
         <option value="ministry">Ministry Sync</option>
+        <option value="numbers">Number Crunchers</option>
       </select>
       <div id="timer-display" style="font-size:13px;font-weight:700;color:var(--t2);min-width:52px;text-align:center">00:00</div>
       <button class="ibtn" id="timer-btn" onclick="toggleTimer()" style="border-color:var(--gr);color:var(--gr)"><i class="ti ti-player-play"></i> Start</button>
@@ -260,6 +261,13 @@ const MEETING_TYPES={
     emails:['andy@journeyautorepair.com','pete@journeyautorepair.com'],
     scTabs:['Ministry Goals','Individual'],
     scKeys:['ministry','individual']
+  },
+  numbers:{
+    label:'Number Crunchers',
+    members:['Pete','Najla'],
+    emails:['pete@journeyautorepair.com','najla@journeyautorepair.com'],
+    scTabs:['Financial Goals','Individual'],
+    scKeys:['numbers','individual']
   }
 };
 let activeMeetingType='admin'; // default
@@ -316,7 +324,9 @@ function defData(){return{
   rocks:[],
   // Ministry has its own separate rocks
   ministryRocks:[],
-  scorecard:{corporate:JSON.parse(JSON.stringify(DEF_CORP)),newhope:JSON.parse(JSON.stringify(DEF_LOC)),andover:JSON.parse(JSON.stringify(DEF_LOC)),individual:[],ministry:[]},
+  // Number Crunchers has its own separate rocks
+  numbersRocks:[],
+  scorecard:{corporate:JSON.parse(JSON.stringify(DEF_CORP)),newhope:JSON.parse(JSON.stringify(DEF_LOC)),andover:JSON.parse(JSON.stringify(DEF_LOC)),individual:[],ministry:[],numbers:[]},
   // Per-meeting-type data — keyed by meeting type (admin/store)
   meetings:{
     admin:{
@@ -343,6 +353,14 @@ function defData(){return{
       headlines:[
         {id:1,person:'Andy',text:'',weekData:{}},
         {id:2,person:'Pete',text:'',weekData:{}}
+      ],
+      todos:[],ids:[],
+      weekRatings:{},meetingDurations:{},agDone:{}
+    },
+    numbers:{
+      headlines:[
+        {id:1,person:'Pete',text:'',weekData:{}},
+        {id:2,person:'Najla',text:'',weekData:{}}
       ],
       todos:[],ids:[],
       weekRatings:{},meetingDurations:{},agDone:{}
@@ -460,6 +478,12 @@ function migrateLegacyData(){
   if(!D.meetings.ministry)D.meetings.ministry={headlines:[{id:1,person:'Andy',text:'',weekData:{}},{id:2,person:'Pete',text:'',weekData:{}}],todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}};
   if(!D.scorecard.ministry)D.scorecard.ministry=[];
   if(!D.ministryRocks)D.ministryRocks=[];
+  if(!D.numbersRocks)D.numbersRocks=[];
+  if(!D.scorecard.numbers)D.scorecard.numbers=[];
+  if(!D.meetings.numbers)D.meetings.numbers={
+    headlines:[{id:1,person:'Pete',text:'',weekData:{}},{id:2,person:'Najla',text:'',weekData:{}}],
+    todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}
+  };
   // If root D.ids has items and meetings.admin.ids is empty, migrate them
   if(D.ids&&D.ids.length&&(!D.meetings.admin.ids||!D.meetings.admin.ids.length)){
     D.meetings.admin.ids=[...D.ids];
@@ -489,7 +513,17 @@ function migrateLegacyData(){
 function getRocks(){
   if(activeMeetingType==='ministry'){
     if(!D.ministryRocks)D.ministryRocks=[];
+  if(!D.numbersRocks)D.numbersRocks=[];
+  if(!D.scorecard.numbers)D.scorecard.numbers=[];
+  if(!D.meetings.numbers)D.meetings.numbers={
+    headlines:[{id:1,person:'Pete',text:'',weekData:{}},{id:2,person:'Najla',text:'',weekData:{}}],
+    todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}
+  };
     return D.ministryRocks;
+  }
+  if(activeMeetingType==='numbers'){
+    if(!D.numbersRocks)D.numbersRocks=[];
+    return D.numbersRocks;
   }
   if(!D.rocks)D.rocks=[];
   return D.rocks;
@@ -516,6 +550,12 @@ function switchMeetingType(type){
   };
   if(!D.scorecard.ministry)D.scorecard.ministry=[];
   if(!D.ministryRocks)D.ministryRocks=[];
+  if(!D.numbersRocks)D.numbersRocks=[];
+  if(!D.scorecard.numbers)D.scorecard.numbers=[];
+  if(!D.meetings.numbers)D.meetings.numbers={
+    headlines:[{id:1,person:'Pete',text:'',weekData:{}},{id:2,person:'Najla',text:'',weekData:{}}],
+    todos:[],ids:[],weekRatings:{},meetingDurations:{},agDone:{}
+  };
   // Update meeting type dropdown
   const sel=document.getElementById('meeting-type-select');
   if(sel)sel.value=type;
