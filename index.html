@@ -130,6 +130,30 @@ select:focus{outline:none;border-color:var(--o)}
 .sreset:hover{color:var(--re);border-color:var(--re)}
 .spin{display:inline-block;width:11px;height:11px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+
+.app-layout{display:flex;gap:14px;align-items:flex-start;}
+.agenda-sidebar{width:185px;flex-shrink:0;position:sticky;top:10px;}
+.main-content{flex:1;min-width:0;}
+.ag-card{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;}
+.ag-hdr{padding:9px 12px;background:var(--o);display:flex;align-items:center;gap:6px;}
+.ag-hdr span{font-size:12px;font-weight:700;color:#fff;}
+.ag-progress{height:4px;background:var(--bg2);}
+.ag-bar{height:100%;background:var(--o);transition:width .4s;}
+.ag-item{display:flex;align-items:flex-start;gap:7px;padding:8px 10px;border-bottom:1px solid var(--bd);cursor:pointer;border-left:3px solid transparent;transition:background .15s;}
+.ag-item:last-child{border-bottom:none;}
+.ag-item:hover{background:var(--bg2);}
+.ag-item.active{background:rgba(254,134,48,.1);border-left-color:var(--o);}
+.ag-num{width:17px;height:17px;border-radius:50%;background:var(--bg2);border:1px solid var(--bd);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--t2);margin-top:2px;}
+.ag-item.active .ag-num{background:var(--o);color:white;border-color:var(--o);}
+.ag-item.done .ag-num{background:var(--gr);color:white;border-color:var(--gr);}
+.ag-lbl{font-size:11px;color:var(--t);line-height:1.3;}
+.ag-item.active .ag-lbl{font-weight:700;color:var(--o);}
+.ag-min{font-size:10px;color:var(--t2);margin-top:1px;}
+.ag-next{width:100%;padding:8px;font-size:12px;font-weight:700;border:none;background:var(--o);color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;}
+.ag-next:hover{opacity:.9;}
+.tab-next{display:flex;justify-content:flex-end;margin-top:10px;}
+.tab-next-btn{font-size:12px;padding:7px 16px;border-radius:var(--rs);border:1px solid var(--o);color:var(--o);background:none;cursor:pointer;font-weight:700;display:flex;align-items:center;gap:5px;}
+@media(max-width:680px){.app-layout{flex-direction:column;}.agenda-sidebar{width:100%;position:static;}}
 </style>
 </head>
 <body>
@@ -169,7 +193,15 @@ select:focus{outline:none;border-color:var(--o)}
   </div>
 
   <div class="sgrid" id="sgrid"></div>
-  <div class="nav" id="mainnav"></div>
+
+  <div class="app-layout">
+    <div class="agenda-sidebar"><div class="ag-card"><div class="ag-hdr"><i class="ti ti-list-check" style="color:white;font-size:13px"></i><span>Agenda</span></div><div class="ag-progress"><div class="ag-bar" id="ag-bar" style="width:0%"></div></div><div id="ag-items"></div><button class="ag-next" onclick="agendaNext()"><i class="ti ti-arrow-right"></i> Next</button></div></div>
+    <div class="main-content">
+      <div class="nav" id="mainnav"></div>
+      <div id="content"></div>
+      <div class="tab-next"><button class="tab-next-btn" onclick="agendaNext()">Next <i class="ti ti-arrow-right"></i></button></div>
+    </div>
+  </div>
 
   <div class="moverlay" id="modal"><div class="modal">
     <div class="mtitle" id="mtitle">Add item</div>
@@ -185,13 +217,13 @@ select:focus{outline:none;border-color:var(--o)}
         <div class="srow"><label>Meeting name</label><input id="s-mtg"/></div>
       </div>
       <div class="ssec"><div class="ssectitle">Main tabs</div>
-        <div class="srow"><label>Tab 1 (Agenda)</label><input id="sn0"/></div>
-        <div class="srow"><label>Tab 2 (Headlines)</label><input id="sn1"/></div>
-        <div class="srow"><label>Tab 3 (Scorecard)</label><input id="sn2"/></div>
-        <div class="srow"><label>Tab 4 (Rocks)</label><input id="sn3"/></div>
-        <div class="srow"><label>Tab 5 (To-Dos)</label><input id="sn4"/></div>
-        <div class="srow"><label>Tab 6 (IDS)</label><input id="sn5"/></div>
-        <div class="srow"><label>Tab 7 (Conclude)</label><input id="sn6"/></div>
+        
+        <div class="srow"><label>Tab 1 (Headlines)</label><input id="sn0"/></div>
+        <div class="srow"><label>Tab 2 (Scorecard)</label><input id="sn1"/></div>
+        <div class="srow"><label>Tab 3 (Rocks)</label><input id="sn2"/></div>
+        <div class="srow"><label>Tab 4 (To-Dos)</label><input id="sn3"/></div>
+        <div class="srow"><label>Tab 5 (IDS)</label><input id="sn4"/></div>
+        <div class="srow"><label>Tab 6 (Conclude)</label><input id="sn5"/></div>
       </div>
       <div class="ssec"><div class="ssectitle">Scorecard sub-tabs</div>
         <div class="srow"><label>Sub-tab 1</label><input id="ss0"/></div>
@@ -272,9 +304,9 @@ const MEETING_TYPES={
 };
 let activeMeetingType='admin'; // default
 
-const DEF_NAV=['Agenda','Headlines','Scorecard','Rocks','To-Dos','IDS','Conclude'];
-const DEF_ICONS=['ti-list-check','ti-speakerphone','ti-chart-bar','ti-mountain','ti-checkbox','ti-flame','ti-star'];
-const DEF_KEYS=['agenda','headlines','scorecard','rocks','todos','ids','conclude'];
+const DEF_NAV=['Headlines','Scorecard','Rocks','To-Dos','IDS','Conclude'];
+const DEF_ICONS=['ti-speakerphone','ti-chart-bar','ti-mountain','ti-checkbox','ti-flame','ti-star'];
+const DEF_KEYS=['headlines','scorecard','rocks','todos','ids','conclude'];
 const DEF_SC=['Corporate Goals','New Hope','Andover','Individual'];
 const DEF_SC_KEYS=['corporate','newhope','andover','individual'];
 const DEF_AGENDA=[
@@ -302,13 +334,15 @@ const DEF_LOC=[
 // ── STATE ────────────────────────────────────────────────────────────────────
 let msToken=null,msUser=null,msMembers=[],msPlanId=null,msBuckets={};
 let spItemId=null,syncTimer=null,lastHash='';
-let activeSection='agenda',activeSCTab=0,modalCtx=null;
+let activeSection='headlines',activeSCTab=0,modalCtx=null;
 // Timer state
 let timerStart=null,timerElapsed=0,timerRunning=false,timerInterval=null;
+let activeAgendaItem=0;
 
 // ── SETTINGS ─────────────────────────────────────────────────────────────────
 function defSettings(){return{orgName:'Journey Auto Repair',meetingName:'Level 10 weekly meeting',navTabs:[...DEF_NAV],scTabs:[...DEF_SC],agendaItems:JSON.parse(JSON.stringify(DEF_AGENDA))};}
-function loadSettings(){try{const r=localStorage.getItem('jl10_settings');if(r)return JSON.parse(r);}catch(e){}return defSettings();}
+function loadSettings(){try{const r=localStorage.getItem('jl10_settings');if(r){const s=JSON.parse(r);// Strip agenda tab if settings have 7 tabs (legacy)
+if(s.navTabs&&s.navTabs.length===7)s.navTabs=s.navTabs.slice(1);return s;}}catch(e){}return defSettings();}
 function saveSettings2(s){try{localStorage.setItem('jl10_settings',JSON.stringify(s));}catch(e){}}
 let ST=loadSettings();
 function applySettings(){
@@ -655,6 +689,8 @@ async function loadSP(force=false){
             // Restore settings from shared data if present
             if(D.settings){
               ST=D.settings;
+              // Strip legacy 7-tab navTabs that included Agenda tab
+              if(ST.navTabs&&ST.navTabs.length===7)ST.navTabs=ST.navTabs.slice(1);
               saveSettings2(ST);
               applySettings();
             }
@@ -1120,8 +1156,48 @@ async function sendSummaryEmail(){
   }
 }
 
+// ── AGENDA SIDEBAR ───────────────────────────────────────────────────────────
+function renderAgendaSidebar(){
+  const items=ST.agendaItems;
+  const wk=curWeek();
+  const done=(mData().agDone&&mData().agDone[wk])||{};
+  const pct=Math.round(((activeAgendaItem+1)/items.length)*100);
+  const bar=document.getElementById("ag-bar");
+  if(bar)bar.style.width=pct+"%";
+  const el=document.getElementById("ag-items");
+  if(!el)return;
+  el.innerHTML=items.map((a,i)=>{
+    const isActive=i===activeAgendaItem;
+    const isDone=!!done[i];
+    const numHtml=isDone?"<i class='ti ti-check' style='font-size:9px'></i>":(i+1);
+    return "<div class='ag-item"+(isActive?" active":"")+(isDone?" done":"")+"' onclick='agendaGoTo("+i+")'><div class='ag-num'>"+numHtml+"</div><div><div class='ag-lbl'>"+a.label+"</div><div class='ag-min'>"+a.minutes+" min</div></div></div>";
+  }).join("");
+}
+function agendaGoTo(i){
+  activeAgendaItem=i;
+  const map={0:"headlines",1:"scorecard",2:"rocks",3:"headlines",4:"todos",5:"ids",6:"conclude"};
+  const target=map[i];
+  if(target){
+    activeSection=target;
+    document.querySelectorAll(".ntab").forEach((t,idx)=>{t.classList.toggle("active",DEF_KEYS[idx]===target);});
+  }
+  renderAgendaSidebar();
+  const c=document.getElementById("content");
+  if(!c)return;
+  const fmap={agenda:rAgenda,headlines:rHeadlines,scorecard:rScorecard,rocks:rRocks,todos:rTodos,ids:rIDS,conclude:rConclude};
+  c.innerHTML=(fmap[activeSection]||rAgenda)();
+  if(!D.sharedTimer)D.sharedTimer={};
+  D.sharedTimer.agendaItem=activeAgendaItem;
+  saveLocal();
+  if(msToken)saveSection("timer");
+}
+function agendaNext(){
+  if(activeAgendaItem<ST.agendaItems.length-1)agendaGoTo(activeAgendaItem+1);
+}
+
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function render(){
+  renderAgendaSidebar();
   // Summary
   const wk=curWeek();
   const sel=document.getElementById('wk-select');
@@ -1143,14 +1219,14 @@ function render(){
     <div class="scard"><div class="slbl">Open issues</div><div class="sval ${openI===0?'cg':'cr'}">${openI}</div><div class="ssub">in IDS queue</div></div>`;
   // Nav
   const nav=document.getElementById('mainnav');
-  if(nav)nav.innerHTML=ST.navTabs.map((t,i)=>`<div class="ntab ${activeSection===DEF_KEYS[i]?'active':''}" onclick="sw('${DEF_KEYS[i]}',this)"><i class="ti ${DEF_ICONS[i]}"></i>${t}</div>`).join('');
+  if(nav)nav.innerHTML=DEF_KEYS.map((k,i)=>`<div class="ntab ${activeSection===k?'active':''}" onclick="sw('${k}',this)"><i class="ti ${DEF_ICONS[i]}"></i>${ST.navTabs[i]||DEF_NAV[i]}</div>`).join('');
   // Content
   const c=document.getElementById('content');if(!c)return;
-  const map={agenda:rAgenda,headlines:rHeadlines,scorecard:rScorecard,rocks:rRocks,todos:rTodos,ids:rIDS,conclude:rConclude};
+  const map={headlines:rHeadlines,scorecard:rScorecard,rocks:rRocks,todos:rTodos,ids:rIDS,conclude:rConclude};
   c.innerHTML=(map[activeSection]||rAgenda)();
 }
 
-function sw(s,el){activeSection=s;document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');render();}
+function sw(s,el){activeSection=s;document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');const agMap={headlines:0,scorecard:1,rocks:2,headlines:3,todos:4,ids:5,conclude:6};if(agMap[s]!==undefined)activeAgendaItem=agMap[s];render();}
 
 // ── AGENDA ────────────────────────────────────────────────────────────────────
 function rAgenda(){
@@ -1210,18 +1286,127 @@ function delSC(k,ri){if(confirm('Delete this metric?')){D.scorecard[k].splice(ri
 // ── ROCKS ─────────────────────────────────────────────────────────────────────
 function rRocks(){
   const rocks=getRocks();
+  const pl={on:'pon',off:'pof',risk:'pri'};
+  const lb={on:'On track',off:'Off track',risk:'At risk'};
+  if(!rocks.length){
+    return '<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-mountain"></i><div><div class="ctitle">'+ST.navTabs[2]+'</div><div class="csub">90-day priorities</div></div></div><span class="tbadge">5 min</span></div><div style="padding:2rem;text-align:center;color:var(--t2);font-size:13px">No rocks this quarter</div><button class="addbtn" onclick="openModal(\'rock\')"><i class="ti ti-plus"></i> Add rock</button></div>';
+  }
   let rows='';
-  if(!rocks.length)rows=`<div style="padding:2rem;text-align:center;color:var(--t2);font-size:13px">No rocks this quarter</div>`;
-  else rocks.forEach((r,i)=>{
-    const pl={on:'pon',off:'pof',risk:'pri'},lb={on:'On track',off:'Off track',risk:'At risk'};
-    rows+=`<div class="cw"><div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="pill ${pl[r.status]||'pon'}">${lb[r.status]||'On track'}</span><input class="ie" value="${r.rock}" style="font-weight:700;font-size:13px" onchange="updRF(${i},'rock',this.value)"/></div><div style="font-size:11px;color:var(--t2);display:flex;gap:8px;align-items:center">Owner:<input class="ie" value="${r.owner}" style="font-size:11px;width:110px" onchange="updRF(${i},'owner',this.value)"/>Due:<input class="ie" value="${r.due}" style="font-size:11px;width:100px" onchange="updRF(${i},'due',this.value)"/></div></div><select onchange="updRS(${i},this.value)"><option value="on" ${r.status==='on'?'selected':''}>On track</option><option value="risk" ${r.status==='risk'?'selected':''}>At risk</option><option value="off" ${r.status==='off'?'selected':''}>Off track</option></select><button class="rbtn" onclick="delR(${i})"><i class="ti ti-trash" style="font-size:12px"></i></button></div>`;
+  rocks.forEach(function(r,i){
+    if(!r.notes)r.notes='';
+    if(!r.milestone30)r.milestone30='';
+    if(!r.milestone60)r.milestone60='';
+    var div=document.createElement('div');
+    div.className='cw';
+    div.style.cssText='flex-direction:column;gap:0;align-items:stretch';
+
+    // Top row: status + title + owner/due + select + delete
+    var topRow=document.createElement('div');
+    topRow.style.cssText='display:flex;align-items:flex-start;gap:10px';
+
+    var left=document.createElement('div');
+    left.style.flex='1';
+
+    var titleRow=document.createElement('div');
+    titleRow.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px';
+    var pill=document.createElement('span');
+    pill.className='pill '+(pl[r.status]||'pon');
+    pill.textContent=lb[r.status]||'On track';
+    var rockIn=document.createElement('input');
+    rockIn.className='ie';
+    rockIn.value=r.rock;
+    rockIn.style.cssText='font-weight:700;font-size:13px';
+    rockIn.setAttribute('data-i',i);
+    rockIn.setAttribute('data-f','rock');
+    rockIn.onchange=function(){updRF(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
+    titleRow.appendChild(pill);
+    titleRow.appendChild(rockIn);
+    left.appendChild(titleRow);
+
+    var metaRow=document.createElement('div');
+    metaRow.style.cssText='font-size:11px;color:var(--t2);display:flex;gap:8px;align-items:center;flex-wrap:wrap';
+    var oSpan=document.createElement('span');oSpan.textContent='Owner:';
+    var ownerIn=document.createElement('input');
+    ownerIn.className='ie';ownerIn.value=r.owner;ownerIn.style.cssText='font-size:11px;width:110px';
+    ownerIn.setAttribute('data-i',i);ownerIn.setAttribute('data-f','owner');
+    ownerIn.onchange=function(){updRF(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
+    var dSpan=document.createElement('span');dSpan.textContent='Due:';
+    var dueIn=document.createElement('input');
+    dueIn.className='ie';dueIn.value=r.due;dueIn.style.cssText='font-size:11px;width:100px';
+    dueIn.setAttribute('data-i',i);dueIn.setAttribute('data-f','due');
+    dueIn.onchange=function(){updRF(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
+    metaRow.appendChild(oSpan);metaRow.appendChild(ownerIn);
+    metaRow.appendChild(dSpan);metaRow.appendChild(dueIn);
+    left.appendChild(metaRow);
+    topRow.appendChild(left);
+
+    var right=document.createElement('div');
+    right.style.cssText='display:flex;gap:6px;align-items:center;flex-shrink:0';
+    var sel=document.createElement('select');
+    sel.style.fontSize='11px';
+    [['on','On track'],['risk','At risk'],['off','Off track']].forEach(function(opt){
+      var o=document.createElement('option');
+      o.value=opt[0];o.textContent=opt[1];
+      if(r.status===opt[0])o.selected=true;
+      sel.appendChild(o);
+    });
+    sel.setAttribute('data-i',i);
+    sel.onchange=function(){updRS(+this.getAttribute('data-i'),this.value);};
+    var delBtn=document.createElement('button');
+    delBtn.className='rbtn';
+    delBtn.innerHTML='<i class="ti ti-trash" style="font-size:12px"></i>';
+    delBtn.setAttribute('data-i',i);
+    delBtn.onclick=function(){delR(+this.getAttribute('data-i'));};
+    right.appendChild(sel);right.appendChild(delBtn);
+    topRow.appendChild(right);
+    div.appendChild(topRow);
+
+    // Milestone grid
+    var grid=document.createElement('div');
+    grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px';
+    ['milestone30','milestone60'].forEach(function(field,fi){
+      var cell=document.createElement('div');
+      var lbl=document.createElement('div');
+      lbl.style.cssText='font-size:10px;font-weight:700;color:var(--o);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px';
+      lbl.textContent=(fi===0?'30':'60')+'-day milestone';
+      var ta=document.createElement('textarea');
+      ta.style.cssText='width:100%;font-size:12px;color:var(--t);padding:6px 8px;border:1px solid var(--bd);border-radius:var(--rs);background:var(--bg2);resize:vertical;min-height:56px';
+      ta.placeholder='What should be done in '+(fi===0?'30':'60')+' days?';
+      ta.value=r[field];
+      ta.setAttribute('data-i',i);ta.setAttribute('data-f',field);
+      ta.onblur=function(){saveRockField(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
+      cell.appendChild(lbl);cell.appendChild(ta);
+      grid.appendChild(cell);
+    });
+    div.appendChild(grid);
+
+    // Notes
+    var notesWrap=document.createElement('div');
+    notesWrap.style.marginTop='8px';
+    var notesLbl=document.createElement('div');
+    notesLbl.style.cssText='font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px';
+    notesLbl.textContent='Notes';
+    var notesTA=document.createElement('textarea');
+    notesTA.style.cssText='width:100%;font-size:12px;color:var(--t);padding:6px 8px;border:1px solid var(--bd);border-radius:var(--rs);background:var(--bg2);resize:vertical;min-height:48px';
+    notesTA.placeholder='Add notes, updates, or context...';
+    notesTA.value=r.notes;
+    notesTA.setAttribute('data-i',i);notesTA.setAttribute('data-f','notes');
+    notesTA.onblur=function(){saveRockField(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
+    notesWrap.appendChild(notesLbl);notesWrap.appendChild(notesTA);
+    div.appendChild(notesWrap);
+
+    rows+=div.outerHTML;
   });
-  return `<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-mountain"></i><div><div class="ctitle">${ST.navTabs[3]}</div><div class="csub">90-day priorities</div></div></div><span class="tbadge">5 min</span></div>${rows}<button class="addbtn" onclick="openModal('rock')"><i class="ti ti-plus"></i> Add rock</button></div>`;
+  return '<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-mountain"></i><div><div class="ctitle">'+ST.navTabs[2]+'</div><div class="csub">90-day priorities</div></div></div><span class="tbadge">5 min</span></div>'+rows+'<button class="addbtn" onclick="openModal(\'rock\')"><i class="ti ti-plus"></i> Add rock</button></div>';
 }
+
+
+
 function updRF(i,f,v){const r=getRocks();r[i][f]=v;save();}
 function updRS(i,v){const r=getRocks();r[i].status=v;save();render();}
 function forcePush(){if(msToken){lastHash='';pushSP().catch(e=>console.warn('forcePush error:',e));}}
 function delR(i){if(confirm('Delete this rock?')){const r=getRocks();r.splice(i,1);save();render();}}
+function saveRockField(i,field,val){const rocks=getRocks();if(!rocks[i])return;rocks[i][field]=val;save();}
 
 // ── TO-DOS ────────────────────────────────────────────────────────────────────
 function rTodos(){
@@ -1523,19 +1708,20 @@ function idsConfirmComplete(i){
 function idsAddAction(i){
   const md=mData();
   const issue=md.ids[i];
-  // Pre-fill the todo modal with issue details
   modalCtx='todo';
   document.getElementById('mtitle').textContent='Create action from issue';
-  const memberOpts=curMeeting().members.map(p=>`<option value="${p}">${p}</option>`).join('');
-  document.getElementById('mfields').innerHTML=`
-    <div class="fld"><label>Task</label><input id="f1" value="${issue.issue}"/></div>
-    <div class="fld"><label>Assign to</label><select id="f2">${memberOpts}</select></div>
-    <div class="fld"><label>Due date</label><input id="f3" placeholder="e.g. Jul 14"/></div>
-    ${msToken&&msPlanId?`<div style="font-size:11px;color:var(--gr);padding:4px 0;display:flex;align-items:center;gap:5px"><i class="ti ti-brand-microsoft"></i> Will sync to Planner & To Do automatically</div>`:''}`;
+  const memberOpts=curMeeting().members.map(p=>'<option value="'+p+'">'+p+'</option>').join('');
+  const syncNote=msToken&&msPlanId?'<div style="font-size:11px;color:var(--gr);padding:4px 0;display:flex;align-items:center;gap:5px"><i class="ti ti-brand-microsoft"></i> Will sync to Planner & To Do automatically</div>':'';
+  document.getElementById('mfields').innerHTML=
+    '<div class="fld"><label>Issue (reference)</label><div style="font-size:12px;color:var(--t2);padding:6px 8px;background:var(--bg2);border-radius:var(--rs);border:1px solid var(--bd)">'+issue.issue+'</div></div>'+
+    '<div class="fld"><label>Action / Task</label><input id="f1" placeholder="What needs to be done?"/></div>'+
+    '<div class="fld"><label>Assign to</label><select id="f2">'+memberOpts+'</select></div>'+
+    '<div class="fld"><label>Due date</label><input id="f3" placeholder="e.g. Jul 14"/></div>'+
+    '<div class="fld"><label>Notes (optional)</label><textarea id="f4" placeholder="Add context or details..." style="min-height:64px;resize:vertical"></textarea></div>'+
+    syncNote;
   document.getElementById('modal').classList.add('open');
   setTimeout(()=>document.getElementById('f1')?.focus(),50);
 }
-
 
 function rConclude(){
   const wk=curWeek(),md=mData();
