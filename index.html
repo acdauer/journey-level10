@@ -1176,6 +1176,7 @@ function renderAgendaSidebar(){
   }).join("");
 }
 function agendaGoTo(i){
+  flushRockFields();saveLocal();if(msToken)pushSP().catch(function(e){console.warn(e);});
   activeAgendaItem=i;
   const map={0:"headlines",1:"scorecard",2:"rocks",3:"todos",4:"ids",5:"conclude"};
   const target=map[i];
@@ -1191,7 +1192,7 @@ function agendaGoTo(i){
   if(!D.sharedTimer)D.sharedTimer={};
   D.sharedTimer.agendaItem=activeAgendaItem;
   saveLocal();
-  if(msToken)saveSection("timer");
+  if(msToken)pushSP().catch(function(e){console.warn(e);});
 }
 function agendaNext(){
   if(activeAgendaItem<ST.agendaItems.length-1)agendaGoTo(activeAgendaItem+1);
@@ -1230,19 +1231,9 @@ function render(){
 
 function sw(s,el){
   // Flush any unsaved rock field values before navigating away
-  if(activeSection==='rocks'){
-    const rocks=getRocks();
-    rocks.forEach(function(r,i){
-      var f30=document.querySelector('[data-i="'+i+'"][data-f="milestone30"]');
-      var f60=document.querySelector('[data-i="'+i+'"][data-f="milestone60"]');
-      var fn=document.querySelector('[data-i="'+i+'"][data-f="notes"]');
-      if(f30&&f30.value!==r.milestone30)r.milestone30=f30.value;
-      if(f60&&f60.value!==r.milestone60)r.milestone60=f60.value;
-      if(fn&&fn.value!==r.notes)r.notes=fn.value;
-    });
-    saveLocal();
-    if(msToken)pushSP().catch(function(e){console.warn(e);});
-  }
+  flushRockFields();
+  saveLocal();
+  if(msToken)pushSP().catch(function(e){console.warn(e);});
   activeSection=s;
   document.querySelectorAll('.ntab').forEach(function(t){t.classList.remove('active');});
   if(el)el.classList.add('active');
@@ -1312,7 +1303,7 @@ function rRocks(){
   const pl={on:'pon',off:'pof',risk:'pri'};
   const lb={on:'On track',off:'Off track',risk:'At risk'};
   if(!rocks.length){
-    return '<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-mountain"></i><div><div class="ctitle">'+ST.navTabs[2]+'</div><div class="csub">90-day priorities</div></div></div><span class="tbadge">5 min</span></div><div style="padding:2rem;text-align:center;color:var(--t2);font-size:13px">No rocks this quarter</div><button class="addbtn" onclick="openModal(\'rock\')"><i class="ti ti-plus"></i> Add rock</button></div>';
+    return '<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-mountain"></i><div><div class="ctitle">'+ST.navTabs[2]+'</div><div class="csub">90-day priorities</div></div></div><span class="tbadge">5 min</span></div><div style="padding:2rem;text-align:center;color:var(--t2);font-size:13px">No rocks this quarter</div><button class="addbtn" onclick="openModal(\'rock\')"><i class="ti ti-plus"></i> Add rock</button><button onclick="saveAllRocks()" style="font-size:12px;padding:7px 16px;border-radius:var(--rs);border:none;background:var(--o);color:#fff;cursor:pointer;font-weight:700;margin:4px 14px 4px auto;display:flex;align-items:center;gap:5px"><i class="ti ti-device-floppy"></i> Save rocks</button></div>';
   }
   let rows='';
   rocks.forEach(function(r,i){
@@ -1420,10 +1411,27 @@ function rRocks(){
 
     rows+=div.outerHTML;
   });
-  return '<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-mountain"></i><div><div class="ctitle">'+ST.navTabs[2]+'</div><div class="csub">90-day priorities</div></div></div><span class="tbadge">5 min</span></div>'+rows+'<button class="addbtn" onclick="openModal(\'rock\')"><i class="ti ti-plus"></i> Add rock</button></div>';
+  return '<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-mountain"></i><div><div class="ctitle">'+ST.navTabs[2]+'</div><div class="csub">90-day priorities</div></div></div><span class="tbadge">5 min</span></div>'+rows+'<button class="addbtn" onclick="openModal(\'rock\')"><i class="ti ti-plus"></i> Add rock</button><button onclick="saveAllRocks()" style="font-size:12px;padding:7px 16px;border-radius:var(--rs);border:none;background:var(--o);color:#fff;cursor:pointer;font-weight:700;margin:4px 14px 4px auto;display:flex;align-items:center;gap:5px"><i class="ti ti-device-floppy"></i> Save rocks</button></div>';
 }
 
 
+
+function flushRockFields(){
+  var rocks=getRocks();
+  rocks.forEach(function(r,i){
+    var fields=['milestone30','milestone60','notes','rock','owner','due'];
+    fields.forEach(function(f){
+      var el=document.querySelector('[data-i="'+i+'"][data-f="'+f+'"]');
+      if(el)r[f]=el.value;
+    });
+  });
+}
+function saveAllRocks(){
+  flushRockFields();
+  save();
+  var el=document.getElementById('rocks-save-status');
+  if(el){el.textContent='Saved! ✅';setTimeout(function(){if(el)el.textContent='';},2000);}
+}
 
 function updRF(i,f,v){const r=getRocks();if(!r[i])return;r[i][f]=v;saveLocal();if(msToken)pushSP().catch(e=>console.warn(e));}
 function updRS(i,v){const r=getRocks();if(!r[i])return;r[i].status=v;save();render();}
