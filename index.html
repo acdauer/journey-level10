@@ -357,7 +357,34 @@ function applySettings(){
 function defData(){return{
   weeks:[wkLabel(0)],wkIdx:0,agDone:{},settings:null,
   // Shared across admin + store meetings
-  rocks:[],
+  rocks:[
+    {id:1,rock:'Andover Electrical',owner:'Josh',due:'Sep 30',status:'on',
+     milestone30:'Connect with JZ to swap work',
+     milestone60:'Electrical Roughed in and ready for remodel.',
+     notes:'Billing is being handled by new payment method that tracks on the PnL.'},
+    {id:2,rock:'Loaner Fleet Financing Option',owner:'Pete',due:'Sep 30',status:'off',
+     milestone30:'Explore Financing options for future Fleet upgrades.',
+     milestone60:'Decide on what kinds of vehicles might work?',
+     notes:"This isn't really an option until stores make more money."},
+    {id:3,rock:'Training Program',owner:'Andy',due:'Sep 30',status:'on',
+     milestone30:'Expectations and Program Outline Created',
+     milestone60:'Content given to staff for soft roll out',
+     notes:'Met with leadership team on 1/2 day in July to discuss outline and content ideas. Josh and Pete are working on FOH and Leadership Team content, Ryan and Andy are working on BOH content. Outline and expectations created: See Loop Notes from meeting'},
+    {id:4,rock:'Accounting Process',owner:'Najla',due:'Sep 30',status:'on',
+     milestone30:'',milestone60:'',notes:''},
+    {id:5,rock:'Recruiting Process',owner:'Andy',due:'Sep 30',status:'on',
+     milestone30:'Meet with Devan and Pete to discuss current process and Andy/Devan developed plan for clerical organization.',
+     milestone60:'Andy/Devan have taken over clerical and "fishing" actions completely. Pete and Andy still doing initial phone interview and Culture Index Result Assessments.',
+     notes:'Andy is having issues accessing Team Tailor 7.23.26'},
+    {id:6,rock:'PiPs',owner:'Andy',due:'Sep 30',status:'on',
+     milestone30:'BOH KPIs set, PiP process for BOH completed. Manager KPIs identified.',
+     milestone60:'Manager PiP created. "After PiP" process clearly defined.',
+     notes:''},
+    {id:7,rock:'Roles and Responsibilities',owner:'Andy',due:'Sep 30',status:'on',
+     milestone30:'',
+     milestone60:'All jobs in ORG chart defined.',
+     notes:'This takes a backseat to recruiting and PiPs.'}
+  ],
   // Ministry has its own separate rocks
   ministryRocks:[],
   // Number Crunchers has its own separate rocks
@@ -1299,142 +1326,92 @@ function delSC(k,ri){if(confirm('Delete this metric?')){D.scorecard[k].splice(ri
 
 // ── ROCKS ─────────────────────────────────────────────────────────────────────
 function rRocks(){
-  const rocks=getRocks();
-  const pl={on:'pon',off:'pof',risk:'pri'};
-  const lb={on:'On track',off:'Off track',risk:'At risk'};
+  var rocks=getRocks();
+  var pl={on:'pon',off:'pof',risk:'pri'};
+  var lb={on:'On track',off:'Off track',risk:'At risk'};
+  var out='';
   if(!rocks.length){
-    return '<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-mountain"></i><div><div class="ctitle">'+ST.navTabs[2]+'</div><div class="csub">90-day priorities</div></div></div><span class="tbadge">5 min</span></div><div style="padding:2rem;text-align:center;color:var(--t2);font-size:13px">No rocks this quarter</div><button class="addbtn" onclick="openModal(\'rock\')"><i class="ti ti-plus"></i> Add rock</button><button onclick="saveAllRocks()" style="font-size:12px;padding:7px 16px;border-radius:var(--rs);border:none;background:var(--o);color:#fff;cursor:pointer;font-weight:700;margin:4px 14px 4px auto;display:flex;align-items:center;gap:5px"><i class="ti ti-device-floppy"></i> Save rocks</button></div>';
+    out='<div style="padding:2rem;text-align:center;color:var(--t2);font-size:13px">No rocks this quarter</div>';
+  } else {
+    for(var ri=0;ri<rocks.length;ri++){
+      var r=rocks[ri];
+      if(!r.notes)r.notes='';
+      if(!r.milestone30)r.milestone30='';
+      if(!r.milestone60)r.milestone60='';
+      var qr=(r.rock||'').replace(/"/g,'&quot;');
+      var qo=(r.owner||'').replace(/"/g,'&quot;');
+      var qd=(r.due||'').replace(/"/g,'&quot;');
+      var q30=(r.milestone30||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      var q60=(r.milestone60||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      var qn=(r.notes||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      out+='<div style="border-bottom:1px solid var(--bd);padding:12px 14px">';
+      out+='<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px">';
+      out+='<div style="flex:1">';
+      out+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">';
+      out+='<span class="pill '+(pl[r.status]||'pon')+'">'+(lb[r.status]||'On track')+'</span>';
+      out+='<input class="ie" value="'+qr+'" style="font-weight:700;font-size:13px" placeholder="Rock description" oninput="updRF('+ri+String.fromCharCode(44)+"'rock'"+String.fromCharCode(44)+'this.value)"/>';
+      out+='</div>';
+      out+='<div style="font-size:11px;color:var(--t2);display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
+      out+='Owner: <input class="ie" value="'+qo+'" style="font-size:11px;width:110px" oninput="updRF('+ri+String.fromCharCode(44)+"'owner'"+String.fromCharCode(44)+'this.value)"/>';
+      out+='Due: <input class="ie" value="'+qd+'" style="font-size:11px;width:100px" oninput="updRF('+ri+String.fromCharCode(44)+"'due'"+String.fromCharCode(44)+'this.value)"/>';
+      out+='</div></div>';
+      out+='<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">';
+      out+='<select style="font-size:11px" onchange="updRS('+ri+',this.value)">';
+      out+='<option value="on"'+(r.status==='on'?' selected':'')+'>On track</option>';
+      out+='<option value="risk"'+(r.status==='risk'?' selected':'')+'>At risk</option>';
+      out+='<option value="off"'+(r.status==='off'?' selected':'')+'>Off track</option>';
+      out+='</select>';
+      out+='<button class="rbtn" onclick="delR('+ri+')"><i class="ti ti-trash" style="font-size:12px"></i></button>';
+      out+='</div></div>';
+      out+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">';
+      out+='<div><div style="font-size:10px;font-weight:700;color:var(--o);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">30-day milestone</div>';
+      out+='<textarea id="r30-'+ri+'" style="width:100%;font-size:12px;padding:6px 8px;border:1px solid var(--bd);border-radius:var(--rs);background:var(--bg2);color:var(--t);resize:vertical;min-height:60px" placeholder="What should be done in 30 days?" oninput="updRF('+ri+String.fromCharCode(44)+"'milestone30'"+String.fromCharCode(44)+'this.value)">'+q30+'</textarea></div>';
+      out+='<div><div style="font-size:10px;font-weight:700;color:var(--o);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">60-day milestone</div>';
+      out+='<textarea id="r60-'+ri+'" style="width:100%;font-size:12px;padding:6px 8px;border:1px solid var(--bd);border-radius:var(--rs);background:var(--bg2);color:var(--t);resize:vertical;min-height:60px" placeholder="What should be done in 60 days?" oninput="updRF('+ri+String.fromCharCode(44)+"'milestone60'"+String.fromCharCode(44)+'this.value)">'+q60+'</textarea></div>';
+      out+='</div>';
+      out+='<div><div style="font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Notes</div>';
+      out+='<textarea id="rn-'+ri+'" style="width:100%;font-size:12px;padding:6px 8px;border:1px solid var(--bd);border-radius:var(--rs);background:var(--bg2);color:var(--t);resize:vertical;min-height:48px" placeholder="Add notes, updates, or context..." oninput="updRF('+ri+String.fromCharCode(44)+"'notes'"+String.fromCharCode(44)+'this.value)">'+qn+'</textarea></div>';
+      out+='</div>';
+    }
   }
-  let rows='';
-  rocks.forEach(function(r,i){
-    if(!r.notes)r.notes='';
-    if(!r.milestone30)r.milestone30='';
-    if(!r.milestone60)r.milestone60='';
-    var div=document.createElement('div');
-    div.className='cw';
-    div.style.cssText='flex-direction:column;gap:0;align-items:stretch';
-
-    // Top row: status + title + owner/due + select + delete
-    var topRow=document.createElement('div');
-    topRow.style.cssText='display:flex;align-items:flex-start;gap:10px';
-
-    var left=document.createElement('div');
-    left.style.flex='1';
-
-    var titleRow=document.createElement('div');
-    titleRow.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px';
-    var pill=document.createElement('span');
-    pill.className='pill '+(pl[r.status]||'pon');
-    pill.textContent=lb[r.status]||'On track';
-    var rockIn=document.createElement('input');
-    rockIn.className='ie';
-    rockIn.value=r.rock;
-    rockIn.style.cssText='font-weight:700;font-size:13px';
-    rockIn.setAttribute('data-i',i);
-    rockIn.setAttribute('data-f','rock');
-    rockIn.oninput=function(){updRF(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
-    titleRow.appendChild(pill);
-    titleRow.appendChild(rockIn);
-    left.appendChild(titleRow);
-
-    var metaRow=document.createElement('div');
-    metaRow.style.cssText='font-size:11px;color:var(--t2);display:flex;gap:8px;align-items:center;flex-wrap:wrap';
-    var oSpan=document.createElement('span');oSpan.textContent='Owner:';
-    var ownerIn=document.createElement('input');
-    ownerIn.className='ie';ownerIn.value=r.owner;ownerIn.style.cssText='font-size:11px;width:110px';
-    ownerIn.setAttribute('data-i',i);ownerIn.setAttribute('data-f','owner');
-    ownerIn.oninput=function(){updRF(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
-    var dSpan=document.createElement('span');dSpan.textContent='Due:';
-    var dueIn=document.createElement('input');
-    dueIn.className='ie';dueIn.value=r.due;dueIn.style.cssText='font-size:11px;width:100px';
-    dueIn.setAttribute('data-i',i);dueIn.setAttribute('data-f','due');
-    dueIn.oninput=function(){updRF(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
-    metaRow.appendChild(oSpan);metaRow.appendChild(ownerIn);
-    metaRow.appendChild(dSpan);metaRow.appendChild(dueIn);
-    left.appendChild(metaRow);
-    topRow.appendChild(left);
-
-    var right=document.createElement('div');
-    right.style.cssText='display:flex;gap:6px;align-items:center;flex-shrink:0';
-    var sel=document.createElement('select');
-    sel.style.fontSize='11px';
-    [['on','On track'],['risk','At risk'],['off','Off track']].forEach(function(opt){
-      var o=document.createElement('option');
-      o.value=opt[0];o.textContent=opt[1];
-      if(r.status===opt[0])o.selected=true;
-      sel.appendChild(o);
-    });
-    sel.setAttribute('data-i',i);
-    sel.onchange=function(){updRS(+this.getAttribute('data-i'),this.value);};
-    var delBtn=document.createElement('button');
-    delBtn.className='rbtn';
-    delBtn.innerHTML='<i class="ti ti-trash" style="font-size:12px"></i>';
-    delBtn.setAttribute('data-i',i);
-    delBtn.onclick=function(){delR(+this.getAttribute('data-i'));};
-    right.appendChild(sel);right.appendChild(delBtn);
-    topRow.appendChild(right);
-    div.appendChild(topRow);
-
-    // Milestone grid
-    var grid=document.createElement('div');
-    grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px';
-    ['milestone30','milestone60'].forEach(function(field,fi){
-      var cell=document.createElement('div');
-      var lbl=document.createElement('div');
-      lbl.style.cssText='font-size:10px;font-weight:700;color:var(--o);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px';
-      lbl.textContent=(fi===0?'30':'60')+'-day milestone';
-      var ta=document.createElement('textarea');
-      ta.style.cssText='width:100%;font-size:12px;color:var(--t);padding:6px 8px;border:1px solid var(--bd);border-radius:var(--rs);background:var(--bg2);resize:vertical;min-height:56px';
-      ta.placeholder='What should be done in '+(fi===0?'30':'60')+' days?';
-      ta.value=r[field];
-      ta.setAttribute('data-i',i);ta.setAttribute('data-f',field);
-      ta.oninput=function(){saveRockField(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
-      cell.appendChild(lbl);cell.appendChild(ta);
-      grid.appendChild(cell);
-    });
-    div.appendChild(grid);
-
-    // Notes
-    var notesWrap=document.createElement('div');
-    notesWrap.style.marginTop='8px';
-    var notesLbl=document.createElement('div');
-    notesLbl.style.cssText='font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px';
-    notesLbl.textContent='Notes';
-    var notesTA=document.createElement('textarea');
-    notesTA.style.cssText='width:100%;font-size:12px;color:var(--t);padding:6px 8px;border:1px solid var(--bd);border-radius:var(--rs);background:var(--bg2);resize:vertical;min-height:48px';
-    notesTA.placeholder='Add notes, updates, or context...';
-    notesTA.value=r.notes;
-    notesTA.setAttribute('data-i',i);notesTA.setAttribute('data-f','notes');
-    notesTA.oninput=function(){saveRockField(+this.getAttribute('data-i'),this.getAttribute('data-f'),this.value);};
-    notesWrap.appendChild(notesLbl);notesWrap.appendChild(notesTA);
-    div.appendChild(notesWrap);
-
-    rows+=div.outerHTML;
-  });
-  return '<div class="card"><div class="chdr"><div class="chl"><i class="ti ti-mountain"></i><div><div class="ctitle">'+ST.navTabs[2]+'</div><div class="csub">90-day priorities</div></div></div><span class="tbadge">5 min</span></div>'+rows+'<button class="addbtn" onclick="openModal(\'rock\')"><i class="ti ti-plus"></i> Add rock</button><button onclick="saveAllRocks()" style="font-size:12px;padding:7px 16px;border-radius:var(--rs);border:none;background:var(--o);color:#fff;cursor:pointer;font-weight:700;margin:4px 14px 4px auto;display:flex;align-items:center;gap:5px"><i class="ti ti-device-floppy"></i> Save rocks</button></div>';
+  return '<div class="card">'+
+    '<div class="chdr"><div class="chl"><i class="ti ti-mountain"></i>'+
+    '<div><div class="ctitle">'+ST.navTabs[2]+'</div>'+
+    '<div class="csub">90-day priorities&nbsp;<span id="rss" style="color:var(--gr);font-weight:700"></span></div>'+
+    '</div></div><span class="tbadge">5 min</span></div>'+
+    out+
+    '<div style="display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--bd);background:var(--bg2)">'+
+    '<button class="addbtn" style="border:none;padding:0;flex:1;background:none" onclick="openModal(\'rock\')"><i class="ti ti-plus"></i> Add rock</button>'+
+    '<button onclick="saveAllRocks()" style="font-size:12px;padding:7px 16px;border-radius:var(--rs);border:none;background:var(--o);color:#fff;cursor:pointer;font-weight:700;display:flex;align-items:center;gap:5px"><i class="ti ti-device-floppy"></i> Save rocks</button>'+
+    '</div></div>';
 }
 
-
-
+function updRF(i,f,v){
+  var r=getRocks();
+  if(!r[i])return;
+  r[i][f]=v;
+  saveLocal();
+  clearTimeout(window._rpt);
+  window._rpt=setTimeout(function(){if(msToken)pushSP().catch(function(e){console.warn(e);});},800);
+}
+function updRS(i,v){var r=getRocks();if(!r[i])return;r[i].status=v;save();render();}
 function flushRockFields(){
   var rocks=getRocks();
-  rocks.forEach(function(r,i){
-    var fields=['milestone30','milestone60','notes','rock','owner','due'];
-    fields.forEach(function(f){
-      var el=document.querySelector('[data-i="'+i+'"][data-f="'+f+'"]');
-      if(el)r[f]=el.value;
-    });
-  });
+  for(var i=0;i<rocks.length;i++){
+    var a=document.getElementById('r30-'+i);
+    var b=document.getElementById('r60-'+i);
+    var c=document.getElementById('rn-'+i);
+    if(a)rocks[i].milestone30=a.value;
+    if(b)rocks[i].milestone60=b.value;
+    if(c)rocks[i].notes=c.value;
+  }
 }
 function saveAllRocks(){
-  flushRockFields();
-  save();
-  var el=document.getElementById('rocks-save-status');
-  if(el){el.textContent='Saved! ✅';setTimeout(function(){if(el)el.textContent='';},2000);}
+  flushRockFields();save();
+  var el=document.getElementById('rss');
+  if(el){el.textContent='Saved ✅';setTimeout(function(){if(el)el.textContent='';},2000);}
 }
-
-function updRF(i,f,v){const r=getRocks();if(!r[i])return;r[i][f]=v;saveLocal();if(msToken)pushSP().catch(e=>console.warn(e));}
-function updRS(i,v){const r=getRocks();if(!r[i])return;r[i].status=v;save();render();}
+function saveRockField(i,f,v){var r=getRocks();if(r[i])r[i][f]=v;}
 function forcePush(){if(msToken){lastHash='';pushSP().catch(e=>console.warn('forcePush error:',e));}}
 function delR(i){if(confirm('Delete this rock?')){const r=getRocks();r.splice(i,1);save();render();}}
 function saveRockField(i,field,val){const rocks=getRocks();if(!rocks[i])return;rocks[i][field]=val;saveLocal();if(msToken)pushSP().catch(e=>console.warn(e));}
